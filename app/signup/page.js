@@ -19,19 +19,27 @@ export default function Auth() {
     password: "",
   });
 
-  // Generate floating bubbles only once
-  const bubbles = useMemo(
-    () =>
-      Array.from({ length: 20 }, (_, i) => ({
-        id: i,
-        size: 40 + Math.random() * 140,
-        left: Math.random() * 100,
-        duration: 12 + Math.random() * 18,
-        delay: Math.random() * 8,
-        opacity: 0.06 + Math.random() * 0.12,
-      })),
+  // Background images that slowly fade/zoom
+  const backgroundImages = useMemo(
+    () => [
+      "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=2000&q=80",
+      "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=2000&q=80",
+      "https://images.unsplash.com/photo-1674027392845-0f3f8f4dbb3d?auto=format&fit=crop&w=2000&q=80",
+      "https://images.unsplash.com/photo-1684369175803-4b6a0d8dfe8f?auto=format&fit=crop&w=2000&q=80",
+    ],
     []
   );
+
+  const [activeBg, setActiveBg] = useState(0);
+
+  // Change background every 6 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveBg((prev) => (prev + 1) % backgroundImages.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [backgroundImages.length]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -121,69 +129,98 @@ export default function Auth() {
 
   return (
     <>
-      {/* Animated Bubble Background */}
-      <div className="fixed inset-0 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-100 to-cyan-100">
-        {/* Floating Bubbles */}
-        {bubbles.map((bubble) => (
+      {/* Animated AI Background */}
+      <div className="fixed inset-0 overflow-hidden">
+        {backgroundImages.map((image, index) => (
           <div
-            key={bubble.id}
-            className="absolute rounded-full border border-emerald-300/20 bg-white/30 backdrop-blur-md"
+            key={index}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ${
+              activeBg === index ? "opacity-100" : "opacity-0"
+            }`}
             style={{
-              width: `${bubble.size}px`,
-              height: `${bubble.size}px`,
-              left: `${bubble.left}%`,
-              bottom: `-${bubble.size}px`,
-              opacity: bubble.opacity,
-              animation: `floatBubble ${bubble.duration}s linear ${bubble.delay}s infinite`,
-              boxShadow: "0 0 40px rgba(16, 185, 129, 0.08)",
+              backgroundImage: `url(${image})`,
+              animation: activeBg === index ? "slowZoom 10s ease-in-out" : "none",
             }}
           />
         ))}
 
-        {/* Soft Glow Effects */}
-        <div className="absolute top-10 left-10 w-80 h-80 bg-emerald-300/20 blur-3xl rounded-full" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-300/20 blur-3xl rounded-full" />
-        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-green-400/10 blur-3xl rounded-full" />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-emerald-900/55 to-cyan-900/65" />
+
+        {/* Decorative glows */}
+        <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-400/20 blur-3xl rounded-full animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-400/20 blur-3xl rounded-full animate-pulse" />
       </div>
 
       {/* Login Card */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white/88 backdrop-blur-2xl p-8 rounded-3xl w-full max-w-md shadow-2xl border border-white/70">
-          {/* Title */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-extrabold text-gray-800">
+        <div className="w-full max-w-md rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg mb-4">
+              <span className="text-3xl">⚡</span>
+            </div>
+
+            <h1 className="text-4xl font-extrabold text-white">
               {isLogin ? "Welcome Back 👋" : "Create Account 🚀"}
             </h1>
-            <p className="text-gray-500 mt-2 text-sm">
+
+            <p className="text-white/80 mt-2 text-sm">
               AI-powered automation for your business.
             </p>
           </div>
 
-          {/* Google Sign In */}
+          {/* Google Button */}
           <button
             type="button"
             onClick={signInWithGoogle}
             disabled={loading}
-            className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50 transition duration-200 mb-4 shadow-sm disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-white to-gray-100 text-gray-800 py-3.5 rounded-2xl font-semibold shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-60 mb-5"
           >
-            {loading ? "Please wait..." : "🔵 Continue with Google"}
+            {/* Official Google SVG */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 48 48"
+              className="w-6 h-6"
+            >
+              <path
+                fill="#FFC107"
+                d="M43.611 20.083H42V20H24v8h11.303C33.651 32.657 29.226 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+              />
+              <path
+                fill="#FF3D00"
+                d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"
+              />
+              <path
+                fill="#4CAF50"
+                d="M24 44c5.176 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.145 35.091 26.715 36 24 36c-5.204 0-9.617-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+              />
+              <path
+                fill="#1976D2"
+                d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+              />
+            </svg>
+
+            <span>
+              {loading ? "Please wait..." : "Continue with Google"}
+            </span>
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-gray-400 text-sm">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-white/20" />
+            <span className="text-white/70 text-sm">or continue with email</span>
+            <div className="flex-1 h-px bg-white/20" />
           </div>
 
           {/* Email */}
           <input
             name="email"
             type="email"
-            placeholder="Email"
+            placeholder="Email address"
             value={form.email}
             onChange={handleChange}
-            className="w-full p-3 mb-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full bg-white/10 border border-white/20 text-white placeholder-white/60 p-3.5 rounded-2xl mb-3 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
           />
 
           {/* Password */}
@@ -193,14 +230,14 @@ export default function Auth() {
             placeholder="Password"
             value={form.password}
             onChange={handleChange}
-            className="w-full p-3 mb-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="w-full bg-white/10 border border-white/20 text-white placeholder-white/60 p-3.5 rounded-2xl mb-5 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
           />
 
-          {/* Submit */}
+          {/* Login / Signup Button */}
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-500 text-white py-3 rounded-xl font-bold hover:from-green-700 hover:to-emerald-600 transition duration-200 shadow-lg disabled:opacity-60"
+            className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-cyan-500 text-white py-3.5 rounded-2xl font-bold shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-60"
           >
             {loading
               ? "Please wait..."
@@ -209,14 +246,14 @@ export default function Auth() {
               : "Create Account"}
           </button>
 
-          {/* Toggle Login/Signup */}
-          <p className="text-center mt-5 text-sm text-gray-600">
+          {/* Toggle */}
+          <p className="text-center mt-5 text-sm text-white/80">
             {isLogin
               ? "Don’t have an account?"
               : "Already have an account?"}{" "}
             <span
               onClick={() => setIsLogin(!isLogin)}
-              className="text-green-700 cursor-pointer font-semibold hover:underline"
+              className="text-emerald-300 font-semibold cursor-pointer hover:text-emerald-200 hover:underline"
             >
               {isLogin ? "Sign up" : "Log in"}
             </span>
@@ -224,22 +261,17 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Bubble Animation */}
+      {/* Custom Animation */}
       <style jsx>{`
-        @keyframes floatBubble {
+        @keyframes slowZoom {
           0% {
-            transform: translateY(0) scale(1);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
+            transform: scale(1);
           }
           50% {
-            transform: translateY(-50vh) scale(1.08);
+            transform: scale(1.08);
           }
           100% {
-            transform: translateY(-120vh) scale(0.92);
-            opacity: 0;
+            transform: scale(1);
           }
         }
       `}</style>
