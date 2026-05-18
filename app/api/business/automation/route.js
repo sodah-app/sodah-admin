@@ -13,6 +13,30 @@ function generateBusinessId() {
 export async function POST(request) {
   try {
     const body = await request.json();
+// Check if WhatsApp is already connected for any business
+const { data: existingConnectedBusiness, error: checkError } = await supabase
+  .from('businesses')
+  .select('id, business_name')
+  .eq('whatsapp_connected', true)
+  .maybeSingle();
+
+if (checkError) {
+  return NextResponse.json(
+    { success: false, error: 'Failed to check WhatsApp connection status.' },
+    { status: 500 }
+  );
+}
+
+if (existingConnectedBusiness) {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        'WhatsApp is already connected for another business on this device. Disconnect it first before creating a new setup.'
+    },
+    { status: 400 }
+  );
+}
 
     const {
       email,
