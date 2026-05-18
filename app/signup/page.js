@@ -19,21 +19,21 @@ export default function Auth() {
     password: "",
   });
 
-  // Generate floating AI bubbles once
+  // Generate floating bubbles only once
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 18 }, (_, i) => ({
+      Array.from({ length: 20 }, (_, i) => ({
         id: i,
-        size: 30 + Math.random() * 120,
+        size: 40 + Math.random() * 140,
         left: Math.random() * 100,
-        duration: 10 + Math.random() * 20,
-        delay: Math.random() * 10,
-        opacity: 0.08 + Math.random() * 0.12,
+        duration: 12 + Math.random() * 18,
+        delay: Math.random() * 8,
+        opacity: 0.06 + Math.random() * 0.12,
       })),
     []
   );
 
-  // If user is already logged in with Supabase, send to welcome page
+  // Redirect if already logged in
   useEffect(() => {
     const checkSession = async () => {
       const {
@@ -73,7 +73,7 @@ export default function Auth() {
     }
   };
 
-  // Email/Password Login + Signup
+  // Email/Password Login & Signup
   const handleSubmit = async () => {
     if (!form.email || !form.password) {
       alert("Please enter your email and password.");
@@ -84,7 +84,6 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        // Login with Supabase
         const { error } = await supabase.auth.signInWithPassword({
           email: form.email,
           password: form.password,
@@ -96,7 +95,6 @@ export default function Auth() {
           router.push("/welcome");
         }
       } else {
-        // Sign up with Supabase
         const { error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
@@ -123,37 +121,36 @@ export default function Auth() {
 
   return (
     <>
-      {/* Background + Floating AI Bubbles */}
+      {/* Animated Bubble Background */}
       <div className="fixed inset-0 overflow-hidden bg-gradient-to-br from-green-50 via-emerald-100 to-cyan-100">
-        {/* Animated Bubbles */}
+        {/* Floating Bubbles */}
         {bubbles.map((bubble) => (
           <div
             key={bubble.id}
-            className="absolute rounded-full border border-emerald-300/30 bg-gradient-to-br from-white/40 to-emerald-200/10 backdrop-blur-sm"
+            className="absolute rounded-full border border-emerald-300/20 bg-white/30 backdrop-blur-md"
             style={{
               width: `${bubble.size}px`,
               height: `${bubble.size}px`,
               left: `${bubble.left}%`,
               bottom: `-${bubble.size}px`,
               opacity: bubble.opacity,
-              animation: `floatUp ${bubble.duration}s linear ${bubble.delay}s infinite`,
-              boxShadow: "0 0 30px rgba(16, 185, 129, 0.08)",
+              animation: `floatBubble ${bubble.duration}s linear ${bubble.delay}s infinite`,
+              boxShadow: "0 0 40px rgba(16, 185, 129, 0.08)",
             }}
           />
         ))}
 
-        {/* Soft glowing blobs */}
-        <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-300/20 blur-3xl rounded-full" />
+        {/* Soft Glow Effects */}
+        <div className="absolute top-10 left-10 w-80 h-80 bg-emerald-300/20 blur-3xl rounded-full" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-300/20 blur-3xl rounded-full" />
-        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-green-400/10 blur-3xl rounded-full" />
+        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-green-400/10 blur-3xl rounded-full" />
       </div>
 
-      {/* Main Content */}
+      {/* Login Card */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl w-full max-w-md shadow-2xl border border-white/60">
-          {/* Logo / Title */}
+        <div className="bg-white/88 backdrop-blur-2xl p-8 rounded-3xl w-full max-w-md shadow-2xl border border-white/70">
+          {/* Title */}
           <div className="text-center mb-6">
-            <div className="text-5xl mb-3">🤖</div>
             <h1 className="text-3xl font-extrabold text-gray-800">
               {isLogin ? "Welcome Back 👋" : "Create Account 🚀"}
             </h1>
@@ -162,7 +159,7 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* Google Sign In Button */}
+          {/* Google Sign In */}
           <button
             type="button"
             onClick={signInWithGoogle}
@@ -185,21 +182,21 @@ export default function Auth() {
             type="email"
             placeholder="Email"
             value={form.email}
-            className="w-full p-3 mb-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
             onChange={handleChange}
+            className="w-full p-3 mb-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
           />
 
           {/* Password */}
           <input
-            type="password"
             name="password"
+            type="password"
             placeholder="Password"
             value={form.password}
-            className="w-full p-3 mb-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
             onChange={handleChange}
+            className="w-full p-3 mb-4 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
           />
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={loading}
@@ -212,7 +209,7 @@ export default function Auth() {
               : "Create Account"}
           </button>
 
-          {/* Toggle Login / Signup */}
+          {/* Toggle Login/Signup */}
           <p className="text-center mt-5 text-sm text-gray-600">
             {isLogin
               ? "Don’t have an account?"
@@ -227,17 +224,22 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Custom Animation */}
+      {/* Bubble Animation */}
       <style jsx>{`
-        @keyframes floatUp {
+        @keyframes floatBubble {
           0% {
             transform: translateY(0) scale(1);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
           }
           50% {
             transform: translateY(-50vh) scale(1.08);
           }
           100% {
-            transform: translateY(-110vh) scale(0.95);
+            transform: translateY(-120vh) scale(0.92);
+            opacity: 0;
           }
         }
       `}</style>
