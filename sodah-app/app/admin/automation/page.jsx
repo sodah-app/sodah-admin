@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+
 /* -------------------------------------------------------------------------- */
 /* COUNTRY LIST                                                                */
 /* -------------------------------------------------------------------------- */
@@ -165,9 +166,6 @@ const priceRanges = [
   "Custom Pricing"
 ];
 
-const [customPrice, setCustomPrice] =
-  useState("");
-
 const workingDaysList = [
   "Monday",
   "Tuesday",
@@ -206,6 +204,17 @@ const capabilityList = [
 
 export default function AutomationPage() {
   const router = useRouter();
+const [formData, setFormData] = useState({
+  business_name: "",
+  industry: "",
+  business_email: "",
+  business_location: "",
+  ai_number: "",
+  support_number: "",
+  working_days: "",
+  working_hours: "",
+  ai_capabilities: "",
+});
 
   /* ---------------------------------------------------------------------- */
   /* STATE                                                                   */
@@ -704,41 +713,27 @@ export default function AutomationPage() {
                     })
                   }
                 />
-<div className="col-span-2">
-  <select
-    className="input"
-    value={form.priceRange}
-    onChange={(e) =>
-      setForm({
-        ...form,
-        priceRange: e.target.value
-      })
-    }
-  >
-    <option value="">Select Price Range</option>
 
-    {priceRanges.map((item) => (
-      <option key={item} value={item}>
-        {item}
-      </option>
-    ))}
-  </select>
-
-  {form.priceRange === "Custom Pricing" && (
-    <input
-      type="text"
-      placeholder="Enter your custom budget"
-      className="input mt-2"
-      value={form.customPrice || ""}
-      onChange={(e) =>
-        setForm({
-          ...form,
-          customPrice: e.target.value
-        })
-      }
-    />
-  )}
-</div>
+                <div className="col-span-2">
+                  <select
+                    className="input"
+                    value={form.priceRange}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        priceRange: e.target.value
+                      })
+                    }
+                  >
+                    <option value="">Select Price Range</option>
+                    {priceRanges.map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* PERSONAL USE */}
           {form.setupType === "personal" && (
