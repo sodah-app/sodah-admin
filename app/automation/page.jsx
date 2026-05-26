@@ -165,9 +165,6 @@ const priceRanges = [
   "Custom Pricing"
 ];
 
-const [customPrice, setCustomPrice] =
-  useState("");
-
 const workingDaysList = [
   "Monday",
   "Tuesday",
@@ -241,6 +238,7 @@ export default function AutomationPage() {
     email: "",
     location: "",
     priceRange: "",
+    customPrice: "",
 
     // PHONE NUMBERS
     aiCode: "+971",
@@ -409,8 +407,11 @@ export default function AutomationPage() {
 
       email: form.email || "",
       location: form.location || "",
-      priceRange: form.priceRange || "",
-
+      priceRange:
+  form.priceRange === "Custom Pricing"
+    ? form.customPrice
+    : form.priceRange,
+  
       // Numbers
       aiNumber: `${form.aiCode}${form.aiNumber}`,
       supportNumber: form.supportNumber
@@ -551,7 +552,7 @@ export default function AutomationPage() {
               alt="WhatsApp"
             />
             <div>
-              <h1 className="font-bold text-xl">soda.io</h1>
+              <h1 className="font-bold text-xl">sodah.io</h1>
               <p className="text-xs text-gray-400">
                 WhatsApp Automation Setup
               </p>
@@ -704,7 +705,22 @@ export default function AutomationPage() {
                     })
                   }
                 />
-<div className="col-span-2">
+
+                <div className="col-span-2">
+                 {form.priceRange === "Custom Pricing" ? (
+  <input
+    type="text"
+    placeholder="Enter your custom budget"
+    className="input"
+    value={form.customPrice || ""}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        customPrice: e.target.value
+      })
+    }
+  />
+) : (
   <select
     className="input"
     value={form.priceRange}
@@ -718,27 +734,14 @@ export default function AutomationPage() {
     <option value="">Select Price Range</option>
 
     {priceRanges.map((item) => (
-      <option key={item} value={item}>
-        {item}
-      </option>
+      <option key={item}>{item}</option>
     ))}
   </select>
-
-  {form.priceRange === "Custom Pricing" && (
-    <input
-      type="text"
-      placeholder="Enter your custom budget"
-      className="input mt-2"
-      value={form.customPrice || ""}
-      onChange={(e) =>
-        setForm({
-          ...form,
-          customPrice: e.target.value
-        })
-      }
-    />
-  )}
-</div>
+)}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* PERSONAL USE */}
           {form.setupType === "personal" && (
@@ -895,21 +898,50 @@ export default function AutomationPage() {
               </div>
 
               {/* HOURS */}
-              <select
-                className="input"
-                value={form.hours}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    hours: e.target.value
-                  })
-                }
-              >
-                <option value="">Select Hours</option>
-                {hourOptions.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
+
+<div className="space-y-2">
+
+  {form.hours === "Custom Hours" ? (
+
+    <input
+      type="text"
+      placeholder="Enter custom working hours"
+      className="input"
+      value={form.customHours || ""}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          customHours: e.target.value
+        })
+      }
+    />
+
+  ) : (
+
+    <select
+      className="input"
+      value={form.hours}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          hours: e.target.value
+        })
+      }
+    >
+      <option value="">Select Hours</option>
+
+      <option>24 Hours</option>
+      <option>8 AM - 4 PM</option>
+      <option>9 AM - 5 PM</option>
+      <option>9 AM - 6 PM</option>
+      <option>10 AM - 7 PM</option>
+
+      <option>Custom Hours</option>
+    </select>
+
+  )}
+
+</div>
             </div>
           </div>
 
