@@ -5,6 +5,11 @@ import { useEffect, useRef, useState } from "react";
 
 export default function WelcomePage() {
   const router = useRouter();
+const [isMobile, setIsMobile] = useState(false);
+
+useEffect(() => {
+  setIsMobile(window.innerWidth < 768);
+}, []);
 
   const [user, setUser] = useState({
     fullName: "",
