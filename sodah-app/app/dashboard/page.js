@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export default function DashboardPage() {
 
   const [businesses, setBusinesses] =
-    useState<any[]>([]);
+useState([]);
 
   const [loading, setLoading] =
     useState(true);
