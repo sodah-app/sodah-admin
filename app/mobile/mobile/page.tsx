@@ -1,8 +1,7 @@
 "use client";
 
-import { isMobileDevice } from "../../utils/isMobileDevice";
-import MobileDesktopNotice from "../../components/ui/MobileDesktopNotice";
-
+import { isMobileDevice } from "../../../utils/isMobileDevice";
+import MobileDesktopNotice from "../../../components/ui/MobileDesktopNotice";
 export default function DashboardPage() {
   if (isMobileDevice()) {
     return (
