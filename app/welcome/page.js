@@ -356,54 +356,80 @@ export default function WelcomePage() {
         {/* GRID */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card
-            title="📊 Dashboard"
-            desc="View chats, bookings & performance"
-            onClick={() =>
-              router.push("/dashboard")
-            }
-          />
 
-          <Card
-            title="💬 Connect WhatsApp"
-            desc="Fill business details and connect your number"
-            onClick={
-              startAutomationSetup
-            }
-          />
+  {/* MOBILE VERSION */}
 
-          <Card
-            title="🚪 Logout"
-            desc="Securely sign out of your account"
-            onClick={handleLogout}
-            danger
-          />
+  {isMobile ? (
+    <>
+      <Card
+        title="💬 Connect WhatsApp"
+        desc="Fill business details and connect your number"
+        onClick={() => router.push("/mobile/automation")}
+        highlight
+      />
 
-          <Card
-            title="📈 Analytics"
-            desc="Track performance & growth"
-            onClick={() =>
-              router.push("/analytics")
-            }
-          />
+      <Card
+        title="💻 Desktop Features"
+        desc="Dashboard, Analytics, Settings and advanced tools are available on Laptop or Desktop computers."
+        onClick={() => {}}
+      />
 
-          <Card
-            title="⚙️ Settings"
-            desc="Manage your account & preferences"
-            onClick={() =>
-              router.push("/settings")
-            }
-          />
+      <Card
+        title="💰 Subscription"
+        desc="Manage your plan"
+        onClick={() => router.push("/subscription")}
+      />
 
-          <Card
-            title="💰 Subscription"
-            desc="Upgrade your plan & unlock features"
-            onClick={() =>
-              router.push("/subscription")
-            }
-            highlight
-          />
-        </div>
+      <Card
+        title="🚪 Logout"
+        desc="Securely sign out"
+        onClick={handleLogout}
+        danger
+      />
+    </>
+  ) : (
+    <>
+      <Card
+        title="📊 Dashboard"
+        desc="View chats, bookings & performance"
+        onClick={() => router.push("/dashboard")}
+      />
+
+      <Card
+        title="💬 Connect WhatsApp"
+        desc="Fill business details and connect your number"
+        onClick={startAutomationSetup}
+      />
+
+      <Card
+        title="🚪 Logout"
+        desc="Securely sign out of your account"
+        onClick={handleLogout}
+        danger
+      />
+
+      <Card
+        title="📈 Analytics"
+        desc="Track performance & growth"
+        onClick={() => router.push("/analytics")}
+      />
+
+      <Card
+        title="⚙️ Settings"
+        desc="Manage your account & preferences"
+        onClick={() => router.push("/settings")}
+      />
+
+      <Card
+        title="💰 Subscription"
+        desc="Upgrade your plan & unlock features"
+        onClick={() => router.push("/subscription")}
+        highlight
+      />
+    </>
+  )}
+
+</div>
 
         {/* INDICATORS */}
 
