@@ -1,243 +1,481 @@
 "use client";
-
-import { useEffect, useMemo, useState } from "react";
+import ResponsiveContainer from "../../components/ui/ResponsiveContainer";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { signIn } from "next-auth/react";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-export default function Auth() {
+export default function AuthPage() {
   const router = useRouter();
+
   const [isLogin, setIsLogin] = useState(true);
-  const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  const [shake, setShake] =
+    useState(false);
 
   const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
     email: "",
     password: "",
   });
 
-  // Background images that slowly fade/zoom
-  const backgroundImages = useMemo(
-    () => [
-      "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=2000&q=80",
-      "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=2000&q=80",
-      "https://images.unsplash.com/photo-1674027392845-0f3f8f4dbb3d?auto=format&fit=crop&w=2000&q=80",
-      "https://images.unsplash.com/photo-1684369175803-4b6a0d8dfe8f?auto=format&fit=crop&w=2000&q=80",
-    ],
-    []
-  );
+  // BACKGROUND IMAGES
+  const bgImages = [
+    "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=1600&auto=format&fit=crop",
 
-  const [activeBg, setActiveBg] = useState(0);
+    "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=1600&auto=format&fit=crop",
 
-  // Change background every 6 seconds
+    "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1600&auto=format&fit=crop",
+  ];
+
+  const [activeBg, setActiveBg] =
+    useState(0);
+
+  // BACKGROUND SLIDER
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveBg((prev) => (prev + 1) % backgroundImages.length);
-    }, 6000);
+      setActiveBg(
+        (prev) =>
+          (prev + 1) %
+          bgImages.length
+      );
+    }, 5000);
 
-    return () => clearInterval(interval);
-  }, [backgroundImages.length]);
+    return () =>
+      clearInterval(interval);
+  }, []);
 
-  // Redirect if already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  // ERROR ALERT
+  const triggerError = (message) => {
+    setSuccess("");
 
-      if (session) {
-        router.push("/welcome");
+    setError(message);
+
+    setShake(true);
+
+    setTimeout(() => {
+      setShake(false);
+    }, 500);
+
+    setTimeout(() => {
+      setError("");
+    }, 3000);
+  };
+
+  // SUCCESS ALERT
+  const triggerSuccess = (
+    message
+  ) => {
+    setError("");
+
+    setSuccess(message);
+
+    setTimeout(() => {
+      setSuccess("");
+    }, 3000);
+  };
+
+  // HANDLE INPUT
+  const handleChange = (e) => {
+    setError("");
+
+    setSuccess("");
+
+    setForm({
+      ...form,
+      [e.target.name]:
+        e.target.value,
+    });
+  };
+
+  // GOOGLE LOGIN
+  const handleGoogleLogin =
+    async () => {
+      try {
+        setLoading(true);
+
+        await signIn(
+          "google",
+          {
+            callbackUrl:
+              "/welcome",
+          }
+        );
+      } catch (error) {
+        console.log(error);
+
+        triggerError(
+          "Google login failed."
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
-    checkSession();
-  }, [router]);
+  // LOGIN / REGISTER
+  const handleSubmit =
+    async () => {
+      try {
+        setLoading(true);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // Google Sign In
-  const signInWithGoogle = async () => {
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/welcome`,
-      },
-    });
-
-    setLoading(false);
-
-    if (error) {
-      alert(error.message);
-    }
-  };
-
-  // Email/Password Login & Signup
-  const handleSubmit = async () => {
-    if (!form.email || !form.password) {
-      alert("Please enter your email and password.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: form.email,
-          password: form.password,
-        });
-
-        if (error) {
-          alert(error.message);
-        } else {
-          router.push("/welcome");
-        }
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: form.email,
-          password: form.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/welcome`,
-          },
-        });
-
-        if (error) {
-          alert(error.message);
-        } else {
-          alert(
-            "Account created successfully! Please check your email to confirm your account."
+        // VALIDATION
+        if (
+          !form.email ||
+          !form.password
+        ) {
+          triggerError(
+            "Please fill in your details."
           );
-          router.push("/subscription");
+
+          return;
         }
+
+        if (!isLogin) {
+          if (
+            !form.fullName ||
+            !form.phone
+          ) {
+            triggerError(
+              "Please complete all fields."
+            );
+
+            return;
+          }
+        }
+
+        // LOGIN
+        if (isLogin) {
+          const response =
+            await fetch(
+              "/api/auth/login",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body: JSON.stringify(
+                  {
+                    email:
+                      form.email,
+
+                    password:
+                      form.password,
+                  }
+                ),
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (
+            !response.ok ||
+            !data.success
+          ) {
+            triggerError(
+              data.message ||
+                "User not found."
+            );
+
+            return;
+          }
+
+          localStorage.setItem(
+            "sodah-user",
+            JSON.stringify(
+              data.user
+            )
+          );
+
+          triggerSuccess(
+            "Login successful!"
+          );
+
+          setTimeout(() => {
+            router.push(
+              "/welcome"
+            );
+          }, 1200);
+        }
+
+        // REGISTER
+        else {
+          const response =
+            await fetch(
+              "/api/auth/register",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body: JSON.stringify(
+                  {
+                    fullName:
+                      form.fullName,
+
+                    phone:
+                      form.phone,
+
+                    email:
+                      form.email,
+
+                    password:
+                      form.password,
+                  }
+                ),
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (
+            !response.ok ||
+            !data.success
+          ) {
+            triggerError(
+              data.message ||
+                "Registration failed."
+            );
+
+            return;
+          }
+
+          triggerSuccess(
+            "Account created successfully!"
+          );
+
+          // RESET FORM
+          setForm({
+            fullName: "",
+            phone: "",
+            email: "",
+            password: "",
+          });
+
+          // SWITCH TO LOGIN
+          setTimeout(() => {
+            setIsLogin(true);
+          }, 1200);
+        }
+      } catch (error) {
+        console.log(error);
+
+        triggerError(
+          "Something went wrong."
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      alert(error.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   return (
-    <>
-      {/* Animated AI Background */}
-      <div className="fixed inset-0 overflow-hidden">
-        {backgroundImages.map((image, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ${
-              activeBg === index ? "opacity-100" : "opacity-0"
-            }`}
-            style={{
-              backgroundImage: `url(${image})`,
-              animation: activeBg === index ? "slowZoom 10s ease-in-out" : "none",
-            }}
-          />
-        ))}
+    <main className="relative min-h-screen overflow-hidden bg-black flex items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-10">
 
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-emerald-900/55 to-cyan-900/65" />
+      {/* BACKGROUND */}
+      <div className="absolute inset-0">
+        {bgImages.map(
+          (img, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center transition-all duration-[3000ms] ${
+                activeBg ===
+                index
+                  ? "opacity-100 scale-110"
+                  : "opacity-0 scale-100"
+              }`}
+              style={{
+                backgroundImage: `url(${img})`,
+              }}
+            />
+          )
+        )}
 
-        {/* Decorative glows */}
-        <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-400/20 blur-3xl rounded-full animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-400/20 blur-3xl rounded-full animate-pulse" />
+        <div className="absolute inset-0 bg-[#03130f]/88 backdrop-blur-sm" />
       </div>
 
-      {/* Login Card */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg mb-4">
-              <span className="text-3xl">⚡</span>
-            </div>
+      {/* GLOW */}
+      <div className="absolute top-0 left-0 w-[250px] sm:w-[350px] md:w-[400px] h-[250px] sm:h-[350px] md:h-[400px] bg-green-500/20 rounded-full blur-[120px]" />
 
-            <h1 className="text-4xl font-extrabold text-white">
-              {isLogin ? "Welcome Back 👋" : "Create Account 🚀"}
+      <div className="absolute bottom-0 right-0 w-[250px] sm:w-[350px] md:w-[400px] h-[250px] sm:h-[350px] md:h-[400px] bg-emerald-400/20 rounded-full blur-[120px]" />
+
+      {/* TOASTS */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 space-y-3">
+
+        {error && (
+          <div className="bg-red-500/90 text-white px-5 py-3 rounded-2xl shadow-2xl animate-slide">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-500/90 text-white px-5 py-3 rounded-2xl shadow-2xl animate-slide">
+            {success}
+          </div>
+        )}
+      </div>
+
+      {/* CARD */}
+      <div
+        className={`relative z-10 w-full transition-all duration-300
+        max-w-sm
+        sm:max-w-md
+        md:max-w-lg
+        lg:max-w-2xl
+        xl:max-w-2xl ${
+          shake
+            ? "animate-shake"
+            : ""
+        }`}
+      >
+
+        <div className="bg-black/35 border border-white/10 backdrop-blur-2xl rounded-[32px] p-5 sm:p-6 md:p-8 lg:p-10 shadow-[0_0_80px_rgba(34,197,94,0.15)]">
+
+          {/* LOGO */}
+          <div className="text-center mb-6">
+
+            <img
+              src="https://res.cloudinary.com/djnjhphf5/image/upload/v1779814901/sodah.io_logo_z6xflv.png"
+              alt="Sodah"
+              className="w-20 h-20 object-cover mx-auto rounded-2xl mb-5 border border-white/10 shadow-xl"
+            />
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+              {isLogin
+                ? "Welcome Back 👋"
+                : "Create Account 🚀"}
             </h1>
 
-            <p className="text-white/80 mt-2 text-sm">
-              AI-powered automation for your business.
+            <p className="text-gray-400 mt-3 text-sm sm:text-base md:text-lg">
+              AI-powered automation
+              for your business.
             </p>
           </div>
 
-          {/* Google Button */}
+          {/* GOOGLE */}
           <button
-            type="button"
-            onClick={signInWithGoogle}
+            onClick={
+              handleGoogleLogin
+            }
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-white to-gray-100 text-gray-800 py-3.5 rounded-2xl font-semibold shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-60 mb-5"
+            className="w-full bg-white text-black py-3 sm:py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:scale-[1.02] transition-all duration-300 text-sm sm:text-base"
           >
-            {/* Official Google SVG */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 48 48"
-              className="w-6 h-6"
-            >
-              <path
-                fill="#FFC107"
-                d="M43.611 20.083H42V20H24v8h11.303C33.651 32.657 29.226 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
-              />
-              <path
-                fill="#FF3D00"
-                d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"
-              />
-              <path
-                fill="#4CAF50"
-                d="M24 44c5.176 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.145 35.091 26.715 36 24 36c-5.204 0-9.617-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
-              />
-              <path
-                fill="#1976D2"
-                d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
-              />
-            </svg>
+            <img
+              src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg"
+              className="w-5 h-5"
+            />
 
-            <span>
-              {loading ? "Please wait..." : "Continue with Google"}
-            </span>
+            Continue with Google
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-white/20" />
-            <span className="text-white/70 text-sm">or continue with email</span>
-            <div className="flex-1 h-px bg-white/20" />
+          {/* DIVIDER */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-white/10" />
+
+            <span className="text-gray-400 text-sm">
+              or continue with email
+            </span>
+
+            <div className="flex-1 h-px bg-white/10" />
           </div>
 
-          {/* Email */}
+          {/* SIGNUP */}
+          {!isLogin && (
+            <>
+              <input
+                type="text"
+                name="fullName"
+                placeholder="Full Name"
+                value={
+                  form.fullName
+                }
+                onChange={
+                  handleChange
+                }
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-4 text-white mb-3 outline-none focus:border-green-400 text-sm sm:text-base"
+              />
+
+              <input
+                type="text"
+                name="phone"
+                placeholder="+1 234 567 8901"
+                value={form.phone}
+                onChange={
+                  handleChange
+                }
+                className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-4 text-white mb-3 outline-none focus:border-green-400 text-sm sm:text-base"
+              />
+            </>
+          )}
+
+          {/* EMAIL */}
           <input
-            name="email"
             type="email"
-            placeholder="Email address"
+            name="email"
+            placeholder="Email Address"
             value={form.email}
             onChange={handleChange}
-            className="w-full bg-white/10 border border-white/20 text-white placeholder-white/60 p-3.5 rounded-2xl mb-3 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
+            className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-4 text-white mb-3 outline-none focus:border-green-400 text-sm sm:text-base"
           />
 
-          {/* Password */}
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full bg-white/10 border border-white/20 text-white placeholder-white/60 p-3.5 rounded-2xl mb-5 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
-          />
+          {/* PASSWORD */}
+          <div className="relative mb-5">
 
-          {/* Login / Signup Button */}
+            <input
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
+              name="password"
+              placeholder="Password"
+              value={
+                form.password
+              }
+              onChange={
+                handleChange
+              }
+              className="w-full bg-white/5 border border-white/10 rounded-2xl p-3.5 sm:p-4 text-white outline-none focus:border-green-400 text-sm sm:text-base"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(
+                  !showPassword
+                )
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"
+            >
+              {showPassword
+                ? "🙈"
+                : "👁️"}
+            </button>
+          </div>
+
+          {/* BUTTON */}
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-cyan-500 text-white py-3.5 rounded-2xl font-bold shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 disabled:opacity-60"
+            className="w-full bg-gradient-to-r from-green-400 to-emerald-600 text-black py-3.5 sm:py-4 rounded-2xl font-bold hover:scale-[1.02] transition-all duration-300 text-sm sm:text-base md:text-lg"
           >
             {loading
               ? "Please wait..."
@@ -246,35 +484,76 @@ export default function Auth() {
               : "Create Account"}
           </button>
 
-          {/* Toggle */}
-          <p className="text-center mt-5 text-sm text-white/80">
+          {/* TOGGLE */}
+          <p className="text-center text-gray-400 mt-5 text-sm sm:text-base">
             {isLogin
               ? "Don’t have an account?"
-              : "Already have an account?"}{" "}
+              : "Already have an account?"}
+
             <span
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-emerald-300 font-semibold cursor-pointer hover:text-emerald-200 hover:underline"
+              onClick={() =>
+                setIsLogin(
+                  !isLogin
+                )
+              }
+              className="text-green-400 ml-2 cursor-pointer font-semibold"
             >
-              {isLogin ? "Sign up" : "Log in"}
+              {isLogin
+                ? "Sign up"
+                : "Log in"}
             </span>
           </p>
         </div>
       </div>
 
-      {/* Custom Animation */}
+      {/* ANIMATIONS */}
       <style jsx>{`
-        @keyframes slowZoom {
+        @keyframes shake {
           0% {
-            transform: scale(1);
+            transform: translateX(0);
           }
-          50% {
-            transform: scale(1.08);
+
+          20% {
+            transform: translateX(-10px);
           }
+
+          40% {
+            transform: translateX(10px);
+          }
+
+          60% {
+            transform: translateX(-8px);
+          }
+
+          80% {
+            transform: translateX(8px);
+          }
+
           100% {
-            transform: scale(1);
+            transform: translateX(0);
           }
         }
+
+        .animate-shake {
+          animation: shake 0.4s ease;
+        }
+
+        @keyframes slide {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slide {
+          animation: slide 0.3s ease;
+        }
       `}</style>
-    </>
+    </main>
   );
 }

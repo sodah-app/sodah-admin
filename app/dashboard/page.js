@@ -1,4 +1,5 @@
 "use client";
+
 import {
   PieChart,
   Pie,
@@ -20,11 +21,42 @@ export default function Dashboard() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [loading, setLoading] = useState(true);
 
+  // ======================================================
+  // DARK MODE
+  // ======================================================
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("dashboard_dark_mode");
+
+    if (savedTheme === "true") {
+      setDarkMode(true);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newValue = !darkMode;
+
+    setDarkMode(newValue);
+
+    localStorage.setItem(
+      "dashboard_dark_mode",
+      newValue
+    );
+  };
+
+  // ======================================================
+  // BUSINESS ID
+  // ======================================================
   const businessId =
     typeof window !== "undefined"
-      ? localStorage.getItem("business_id") || "BIZ_002"
+      ? localStorage.getItem("business_id") ||
+        "BIZ_002"
       : "BIZ_002";
 
+  // ======================================================
+  // FETCH DATA
+  // ======================================================
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -37,13 +69,17 @@ export default function Dashboard() {
           .from("appointments")
           .select("*")
           .eq("business_id", businessId)
-          .order("created_at", { ascending: false }),
+          .order("created_at", {
+            ascending: false,
+          }),
 
         supabase
           .from("customers")
           .select("*")
           .eq("business_id", businessId)
-          .order("created_at", { ascending: false }),
+          .order("created_at", {
+            ascending: false,
+          }),
       ]);
 
       if (appointmentsResult.error) {
@@ -54,54 +90,78 @@ export default function Dashboard() {
         throw customersResult.error;
       }
 
+      // ======================================================
+      // NORMALIZE APPOINTMENTS
+      // ======================================================
       const normalizedAppointments = (
         appointmentsResult.data || []
       ).map((item) => ({
         ...item,
+
         Name:
           item.customer_name ||
           item.name ||
           "Unknown",
+
         Phone:
           item.customer_phone ||
           item.phone ||
           "No phone",
+
         Date:
           item.appointment_date || "",
+
         Time:
           item.appointment_time || "",
+
         Appointment_status:
           item.status || "Pending",
+
         Query:
           item.notes || "",
+
         query:
           item.notes || "",
+
         lead_status:
           item.lead_status || "new",
       }));
 
+      // ======================================================
+      // NORMALIZE CUSTOMERS
+      // ======================================================
       const normalizedCustomers = (
         customersResult.data || []
       ).map((item) => ({
         ...item,
+
         Name:
           item.name || "Unknown",
+
         Phone:
           item.phone || "No phone",
+
         Query:
           item.customer_message ||
           item.query ||
           "",
+
         query:
           item.customer_message ||
           item.query ||
           "",
+
         lead_status:
           item.lead_status || "new",
       }));
 
-      setAppointments(normalizedAppointments);
-      setCustomers(normalizedCustomers);
+      setAppointments(
+        normalizedAppointments
+      );
+
+      setCustomers(
+        normalizedCustomers
+      );
     } catch (err) {
       console.error(
         "Dashboard Supabase fetch error:",
@@ -112,96 +172,134 @@ export default function Dashboard() {
     }
   };
 
- useEffect(() => {
-  // Initial load only once
-  fetchData();
+  // ======================================================
+  // AUTO REFRESH
+  // ======================================================
+  useEffect(() => {
+    fetchData();
 
-  // Background refresh every 4 seconds WITHOUT showing loading screen
-  const interval = setInterval(async () => {
-    try {
-      const [
-        appointmentsResult,
-        customersResult,
-      ] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select("*")
-          .eq("business_id", businessId)
-          .order("created_at", { ascending: false }),
+    const interval = setInterval(
+      async () => {
+        try {
+          const [
+            appointmentsResult,
+            customersResult,
+          ] = await Promise.all([
+            supabase
+              .from("appointments")
+              .select("*")
+              .eq(
+                "business_id",
+                businessId
+              )
+              .order("created_at", {
+                ascending: false,
+              }),
 
-        supabase
-          .from("customers")
-          .select("*")
-          .eq("business_id", businessId)
-          .order("created_at", { ascending: false }),
-      ]);
+            supabase
+              .from("customers")
+              .select("*")
+              .eq(
+                "business_id",
+                businessId
+              )
+              .order("created_at", {
+                ascending: false,
+              }),
+          ]);
 
-      if (
-        appointmentsResult.error ||
-        customersResult.error
-      ) {
-        return;
-      }
+          if (
+            appointmentsResult.error ||
+            customersResult.error
+          ) {
+            return;
+          }
 
-      const normalizedAppointments = (
-        appointmentsResult.data || []
-      ).map((item) => ({
-        ...item,
-        Name:
-          item.customer_name ||
-          item.name ||
-          "Unknown",
-        Phone:
-          item.customer_phone ||
-          item.phone ||
-          "No phone",
-        Date:
-          item.appointment_date || "",
-        Time:
-          item.appointment_time || "",
-        Appointment_status:
-          item.status || "Pending",
-        Query:
-          item.notes || "",
-        query:
-          item.notes || "",
-        lead_status:
-          item.lead_status || "new",
-      }));
+          const normalizedAppointments = (
+            appointmentsResult.data || []
+          ).map((item) => ({
+            ...item,
 
-      const normalizedCustomers = (
-        customersResult.data || []
-      ).map((item) => ({
-        ...item,
-        Name:
-          item.name || "Unknown",
-        Phone:
-          item.phone || "No phone",
-        Query:
-          item.customer_message ||
-          item.query ||
-          "",
-        query:
-          item.customer_message ||
-          item.query ||
-          "",
-        lead_status:
-          item.lead_status || "new",
-      }));
+            Name:
+              item.customer_name ||
+              item.name ||
+              "Unknown",
 
-      // Update silently in background
-      setAppointments(normalizedAppointments);
-      setCustomers(normalizedCustomers);
-    } catch (error) {
-      console.error(
-        "Background refresh error:",
-        error
-      );
-    }
-  }, 4000);
+            Phone:
+              item.customer_phone ||
+              item.phone ||
+              "No phone",
 
-  return () => clearInterval(interval);
-}, []);
+            Date:
+              item.appointment_date ||
+              "",
+
+            Time:
+              item.appointment_time ||
+              "",
+
+            Appointment_status:
+              item.status ||
+              "Pending",
+
+            Query:
+              item.notes || "",
+
+            query:
+              item.notes || "",
+
+            lead_status:
+              item.lead_status ||
+              "new",
+          }));
+
+          const normalizedCustomers = (
+            customersResult.data || []
+          ).map((item) => ({
+            ...item,
+
+            Name:
+              item.name || "Unknown",
+
+            Phone:
+              item.phone || "No phone",
+
+            Query:
+              item.customer_message ||
+              item.query ||
+              "",
+
+            query:
+              item.customer_message ||
+              item.query ||
+              "",
+
+            lead_status:
+              item.lead_status ||
+              "new",
+          }));
+
+          setAppointments(
+            normalizedAppointments
+          );
+
+          setCustomers(
+            normalizedCustomers
+          );
+        } catch (error) {
+          console.error(
+            "Background refresh error:",
+            error
+          );
+        }
+      },
+      4000
+    );
+
+    return () =>
+      clearInterval(interval);
+  }, []);
+
   // ======================================================
   // MAIN STATS
   // ======================================================
@@ -209,28 +307,38 @@ export default function Dashboard() {
 
   const booked = appointments.filter(
     (a) =>
-      String(a.Appointment_status || "")
+      String(
+        a.Appointment_status || ""
+      )
         .toLowerCase()
         .trim() === "booked"
   ).length;
 
   const pending = appointments.filter(
     (a) =>
-      String(a.Appointment_status || "")
+      String(
+        a.Appointment_status || ""
+      )
         .toLowerCase()
         .trim() === "pending"
   ).length;
 
   // ======================================================
-  // PIE CHART DATA
+  // PIE DATA
   // ======================================================
   const pieData = [
-    { name: "Booked", value: booked },
-    { name: "Pending", value: pending },
+    {
+      name: "Booked",
+      value: booked,
+    },
+    {
+      name: "Pending",
+      value: pending,
+    },
   ];
 
   // ======================================================
-  // WEEKLY CHAT ACTIVITY (MON → SUN)
+  // REAL WEEKLY ACTIVITY FROM SUPABASE
   // ======================================================
   const activityData = useMemo(() => {
     const weeklyActivity = [
@@ -244,32 +352,33 @@ export default function Dashboard() {
     ];
 
     const dayMap = {
-      1: 0, // Mon
-      2: 1, // Tue
-      3: 2, // Wed
-      4: 3, // Thu
-      5: 4, // Fri
-      6: 5, // Sat
-      0: 6, // Sun
+      1: 0,
+      2: 1,
+      3: 2,
+      4: 3,
+      5: 4,
+      6: 5,
+      0: 6,
     };
 
     appointments.forEach((item) => {
       const rawDate =
-        item.created_at ||
-        item.Date ||
-        null;
+        item.appointment_date ||
+        item.created_at;
 
       if (!rawDate) return;
 
       const date = new Date(rawDate);
 
-      if (isNaN(date.getTime())) return;
+      if (isNaN(date.getTime()))
+        return;
 
-      const jsDay = date.getDay();
-      const index = dayMap[jsDay];
+      const index =
+        dayMap[date.getDay()];
 
       if (index !== undefined) {
-        weeklyActivity[index].value += 1;
+        weeklyActivity[index]
+          .value += 1;
       }
     });
 
@@ -279,75 +388,96 @@ export default function Dashboard() {
   // ======================================================
   // UNIQUE CUSTOMERS
   // ======================================================
-  const uniqueCustomers = useMemo(() => {
-    const merged = [
-      ...customers,
-      ...appointments,
-    ];
+  const uniqueCustomers =
+    useMemo(() => {
+      const merged = [
+        ...customers,
+        ...appointments,
+      ];
 
-    return Array.from(
-      new Map(
-        merged.map((item) => [
-          item.Phone ||
-            item.phone ||
-            `temp-${Math.random()}`,
-          item,
-        ])
-      ).values()
-    );
-  }, [customers, appointments]);
+      return Array.from(
+        new Map(
+          merged.map((item) => [
+            item.Phone ||
+              item.phone ||
+              `temp-${Math.random()}`,
+            item,
+          ])
+        ).values()
+      );
+    }, [customers, appointments]);
 
   // ======================================================
   // NEW LEADS
   // ======================================================
-  const newLeads = uniqueCustomers.filter(
-    (customer) => {
-      const status = String(
-        customer.lead_status ||
-          customer.leadStatus ||
-          "new"
-      ).toLowerCase();
+  const newLeads =
+    uniqueCustomers.filter(
+      (customer) => {
+        const status = String(
+          customer.lead_status ||
+            customer.leadStatus ||
+            "new"
+        ).toLowerCase();
 
-      return status.includes("new");
-    }
-  );
+        return status.includes(
+          "new"
+        );
+      }
+    );
 
   // ======================================================
   // HOT LEADS
   // ======================================================
-  const hotLeads = uniqueCustomers.filter(
-    (customer) => {
-      const status = String(
-        customer.lead_status ||
-          customer.leadStatus ||
-          ""
-      ).toLowerCase();
+  const hotLeads =
+    uniqueCustomers.filter(
+      (customer) => {
+        const status = String(
+          customer.lead_status ||
+            customer.leadStatus ||
+            ""
+        ).toLowerCase();
 
-      const query = String(
-        customer.query ||
-          customer.Query ||
-          customer.customer_message ||
-          ""
-      ).toLowerCase();
+        const query = String(
+          customer.query ||
+            customer.Query ||
+            customer.customer_message ||
+            ""
+        ).toLowerCase();
 
-      return (
-        status.includes("hot") ||
-        query.includes("price") ||
-        query.includes("book") ||
-        query.includes("appointment") ||
-        query.includes("today") ||
-        query.includes("available")
-      );
-    }
-  );
+        return (
+          status.includes("hot") ||
+          query.includes("price") ||
+          query.includes("book") ||
+          query.includes(
+            "appointment"
+          ) ||
+          query.includes("today") ||
+          query.includes(
+            "available"
+          )
+        );
+      }
+    );
 
   // ======================================================
   // LOADING
   // ======================================================
   if (loading) {
     return (
-      <div className="flex h-screen bg-gray-400 items-center justify-center">
-        <div className="bg-white p-6 rounded-xl shadow text-center">
+      <div
+        className={`flex h-screen items-center justify-center ${
+          darkMode
+            ? "bg-[#020617] text-white"
+            : "bg-gray-200 text-black"
+        }`}
+      >
+        <div
+          className={`p-6 rounded-xl shadow-xl ${
+            darkMode
+              ? "bg-[#0f172a]"
+              : "bg-white"
+          }`}
+        >
           Loading dashboard...
         </div>
       </div>
@@ -358,60 +488,123 @@ export default function Dashboard() {
   // UI
   // ======================================================
   return (
-    <div className="flex h-screen bg-gray-400">
-
+    <div
+      className={`flex h-screen transition-all duration-300 ${
+        darkMode
+          ? "bg-[#020617] text-white"
+          : "bg-gray-200 text-black"
+      }`}
+    >
       {/* ======================================================
           SIDEBAR
       ====================================================== */}
       <div className="w-60 bg-gradient-to-b from-[#0f172a] to-[#1e293b] text-white p-4 flex flex-col">
-        <h2 className="font-bold text-lg mb-6">Sodah.io</h2>
+        <h2 className="font-bold text-lg mb-6">
+          Sodah.io
+        </h2>
 
         <SidebarItem
           title="Dashboard"
-          active={activePage === "Dashboard"}
-          onClick={() => setActivePage("Dashboard")}
+          active={
+            activePage ===
+            "Dashboard"
+          }
+          onClick={() =>
+            setActivePage(
+              "Dashboard"
+            )
+          }
         />
 
         <SidebarItem
           title="Bookings"
-          active={activePage === "Bookings"}
-          onClick={() => setActivePage("Bookings")}
+          active={
+            activePage ===
+            "Bookings"
+          }
+          onClick={() =>
+            setActivePage(
+              "Bookings"
+            )
+          }
         />
 
         <SidebarItem
           title="Customers"
-          active={activePage === "Customers"}
-          onClick={() => setActivePage("Customers")}
+          active={
+            activePage ===
+            "Customers"
+          }
+          onClick={() =>
+            setActivePage(
+              "Customers"
+            )
+          }
         />
 
         <SidebarItem
           title="New Leads"
-          active={activePage === "New Leads"}
-          onClick={() => setActivePage("New Leads")}
+          active={
+            activePage ===
+            "New Leads"
+          }
+          onClick={() =>
+            setActivePage(
+              "New Leads"
+            )
+          }
         />
 
         <SidebarItem
           title="Hot Leads"
-          active={activePage === "Hot Leads"}
-          onClick={() => setActivePage("Hot Leads")}
+          active={
+            activePage ===
+            "Hot Leads"
+          }
+          onClick={() =>
+            setActivePage(
+              "Hot Leads"
+            )
+          }
         />
 
         <SidebarItem
           title="Calendar"
-          active={activePage === "Calendar"}
-          onClick={() => setActivePage("Calendar")}
+          active={
+            activePage ===
+            "Calendar"
+          }
+          onClick={() =>
+            setActivePage(
+              "Calendar"
+            )
+          }
         />
 
         <SidebarItem
           title="Reports"
-          active={activePage === "Reports"}
-          onClick={() => setActivePage("Reports")}
+          active={
+            activePage ===
+            "Reports"
+          }
+          onClick={() =>
+            setActivePage(
+              "Reports"
+            )
+          }
         />
 
         <SidebarItem
           title="Settings"
-          active={activePage === "Settings"}
-          onClick={() => setActivePage("Settings")}
+          active={
+            activePage ===
+            "Settings"
+          }
+          onClick={() =>
+            setActivePage(
+              "Settings"
+            )
+          }
         />
 
         {/* BOTTOM */}
@@ -426,7 +619,9 @@ export default function Dashboard() {
             className="text-red-400 cursor-pointer"
             onClick={() => {
               localStorage.clear();
-              window.location.href = "/login";
+
+              window.location.href =
+                "/login";
             }}
           >
             Logout
@@ -439,13 +634,17 @@ export default function Dashboard() {
       ====================================================== */}
       <div className="flex-1 p-6 overflow-hidden">
         {/* DASHBOARD */}
-        {activePage === "Dashboard" && (
+        {activePage ===
+          "Dashboard" && (
           <>
             <div className="flex justify-between mb-4">
               <h1 className="text-xl font-bold">
                 Dashboard
               </h1>
-              <p>Welcome back</p>
+
+              <p>
+                Welcome back
+              </p>
             </div>
 
             {/* STATS */}
@@ -455,22 +654,27 @@ export default function Dashboard() {
                 value={total}
                 color="blue"
               />
+
               <Card
                 title="Booked"
                 value={booked}
                 color="green"
               />
+
               <Card
                 title="Pending"
                 value={pending}
                 color="yellow"
               />
+
               <Card
                 title="Success %"
                 value={
                   total
                     ? `${Math.round(
-                        (booked / total) * 100
+                        (booked /
+                          total) *
+                          100
                       )}%`
                     : "0%"
                 }
@@ -481,7 +685,13 @@ export default function Dashboard() {
             {/* CHARTS */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               {/* BOOKING STATUS */}
-              <div className="bg-white p-3 rounded-xl shadow">
+              <div
+                className={`p-3 rounded-xl shadow-xl ${
+                  darkMode
+                    ? "bg-[#0f172a]"
+                    : "bg-white"
+                }`}
+              >
                 <h3 className="text-xs font-semibold mb-1">
                   Booking Status
                 </h3>
@@ -504,8 +714,14 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
 
-              {/* WEEKLY CHAT ACTIVITY */}
-              <div className="bg-white p-3 rounded-xl shadow">
+              {/* WEEKLY ACTIVITY */}
+              <div
+                className={`p-3 rounded-xl shadow-xl ${
+                  darkMode
+                    ? "bg-[#0f172a]"
+                    : "bg-white"
+                }`}
+              >
                 <h3 className="text-xs font-semibold mb-1">
                   Weekly Chat Activity
                 </h3>
@@ -514,13 +730,23 @@ export default function Dashboard() {
                   width="100%"
                   height={120}
                 >
-                  <BarChart data={activityData}>
+                  <BarChart
+                    data={activityData}
+                  >
                     <XAxis
                       dataKey="name"
+                      stroke={
+                        darkMode
+                          ? "#ffffff"
+                          : "#000000"
+                      }
                       fontSize={10}
                     />
+
                     <YAxis hide />
+
                     <Tooltip />
+
                     <Bar
                       dataKey="value"
                       fill="#3b82f6"
@@ -531,49 +757,65 @@ export default function Dashboard() {
             </div>
 
             <AppointmentsTable
-              appointments={appointments}
+              appointments={
+                appointments
+              }
+              darkMode={darkMode}
             />
           </>
         )}
 
         {/* BOOKINGS */}
-        {activePage === "Bookings" && (
+        {activePage ===
+          "Bookings" && (
           <AppointmentsTable
-            appointments={appointments}
+            appointments={
+              appointments
+            }
             full
+            darkMode={darkMode}
           />
         )}
 
         {/* CUSTOMERS */}
-        {activePage === "Customers" && (
+        {activePage ===
+          "Customers" && (
           <CustomersTable
-            customers={uniqueCustomers}
+            customers={
+              uniqueCustomers
+            }
             title="Customers"
+            darkMode={darkMode}
           />
         )}
 
         {/* NEW LEADS */}
-        {activePage === "New Leads" && (
+        {activePage ===
+          "New Leads" && (
           <CustomersTable
             customers={newLeads}
             title="New Leads"
             statusLabel="New Lead"
-            statusColor="text-blue-600"
+            statusColor="text-blue-400"
+            darkMode={darkMode}
           />
         )}
 
         {/* HOT LEADS */}
-        {activePage === "Hot Leads" && (
+        {activePage ===
+          "Hot Leads" && (
           <CustomersTable
             customers={hotLeads}
             title="Hot Leads"
             statusLabel="🔥 Hot Lead"
-            statusColor="text-red-600 font-bold"
+            statusColor="text-red-400 font-bold"
+            darkMode={darkMode}
           />
         )}
 
         {/* CALENDAR */}
-        {activePage === "Calendar" && (
+        {activePage ===
+          "Calendar" && (
           <iframe
             src="https://calendar.google.com/calendar/embed?src=en.ae%23holiday%40group.v.calendar.google.com"
             className="w-full h-full border rounded-xl"
@@ -581,20 +823,48 @@ export default function Dashboard() {
         )}
 
         {/* REPORTS */}
-        {activePage === "Reports" && (
-          <div className="bg-white p-6 rounded-xl shadow">
+        {activePage ===
+          "Reports" && (
+          <div
+            className={`p-6 rounded-xl shadow-xl ${
+              darkMode
+                ? "bg-[#0f172a]"
+                : "bg-white"
+            }`}
+          >
             <h2 className="font-bold mb-4">
               Daily Report
             </h2>
 
-            <p>Total Bookings: {total}</p>
-            <p>Booked: {booked}</p>
-            <p>Pending: {pending}</p>
-            <p>New Leads: {newLeads.length}</p>
-            <p>Hot Leads: {hotLeads.length}</p>
+            <p>
+              Total Bookings:{" "}
+              {total}
+            </p>
+
+            <p>
+              Booked: {booked}
+            </p>
+
+            <p>
+              Pending: {pending}
+            </p>
+
+            <p>
+              New Leads:{" "}
+              {newLeads.length}
+            </p>
+
+            <p>
+              Hot Leads:{" "}
+              {hotLeads.length}
+            </p>
 
             <textarea
-              className="w-full mt-4 p-2 border rounded"
+              className={`w-full mt-4 p-2 rounded border ${
+                darkMode
+                  ? "bg-[#1e293b] border-gray-700 text-white"
+                  : "bg-white border-gray-300 text-black"
+              }`}
               placeholder="Write report..."
             />
 
@@ -605,14 +875,39 @@ export default function Dashboard() {
         )}
 
         {/* SETTINGS */}
-        {activePage === "Settings" && (
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h2 className="font-bold">
+        {activePage ===
+          "Settings" && (
+          <div
+            className={`p-6 rounded-xl shadow-xl ${
+              darkMode
+                ? "bg-[#0f172a]"
+                : "bg-white"
+            }`}
+          >
+            <h2 className="font-bold text-xl mb-4">
               Settings
             </h2>
-            <p>
-              System settings already configured.
-            </p>
+
+            <div className="flex items-center justify-between">
+              <span>
+                Dashboard Dark Mode
+              </span>
+
+              <button
+                onClick={
+                  toggleDarkMode
+                }
+                className={`px-4 py-2 rounded-lg font-semibold ${
+                  darkMode
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-300 text-black"
+                }`}
+              >
+                {darkMode
+                  ? "ON"
+                  : "OFF"}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -620,6 +915,9 @@ export default function Dashboard() {
   );
 }
 
+// ======================================================
+// AI LIVE
+// ======================================================
 function AILiveIndicator() {
   return (
     <div className="flex flex-col items-center">
@@ -639,7 +937,8 @@ function AILiveIndicator() {
           height: 8px;
           background: #38bdf8;
           border-radius: 50%;
-          animation: bounce 1.4s infinite ease-in-out both;
+          animation: bounce 1.4s infinite
+            ease-in-out both;
         }
 
         .dot:nth-child(1) {
@@ -666,6 +965,9 @@ function AILiveIndicator() {
   );
 }
 
+// ======================================================
+// SIDEBAR ITEM
+// ======================================================
 function SidebarItem({
   title,
   active,
@@ -685,22 +987,35 @@ function SidebarItem({
   );
 }
 
-function Card({ title, value, color }) {
+// ======================================================
+// CARD
+// ======================================================
+function Card({
+  title,
+  value,
+  color,
+}) {
   const styles = {
     blue: "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
+
     green:
       "bg-gradient-to-r from-green-500 to-green-600 text-white",
+
     yellow:
       "bg-gradient-to-r from-yellow-400 to-orange-500 text-white",
+
     purple:
       "bg-gradient-to-r from-purple-500 to-indigo-600 text-white",
   };
 
   return (
     <div
-      className={`p-4 rounded-xl ${styles[color]}`}
+      className={`p-4 rounded-xl shadow-xl ${styles[color]}`}
     >
-      <p className="text-xs">{title}</p>
+      <p className="text-xs">
+        {title}
+      </p>
+
       <h3 className="text-xl font-bold">
         {value}
       </h3>
@@ -708,75 +1023,121 @@ function Card({ title, value, color }) {
   );
 }
 
+// ======================================================
+// CUSTOMERS TABLE
+// ======================================================
 function CustomersTable({
   customers,
   title,
   statusLabel,
   statusColor = "text-gray-700",
+  darkMode,
 }) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow h-full overflow-y-auto">
+    <div
+      className={`p-6 rounded-xl shadow-xl h-full overflow-y-auto ${
+        darkMode
+          ? "bg-[#0f172a]"
+          : "bg-white"
+      }`}
+    >
       <h2 className="font-bold mb-4 text-lg">
         {title}
       </h2>
 
-      <div className="grid grid-cols-4 text-sm font-bold bg-gray-300 px-3 py-2 rounded mb-2">
+      <div
+        className={`grid grid-cols-4 text-sm font-bold px-3 py-2 rounded mb-2 ${
+          darkMode
+            ? "bg-[#1e293b]"
+            : "bg-gray-300"
+        }`}
+      >
         <div>#</div>
         <div>Name</div>
         <div>Phone</div>
         <div>
-          {statusLabel ? "Status" : "Query"}
+          {statusLabel
+            ? "Status"
+            : "Query"}
         </div>
       </div>
 
-      {customers.map((customer, index) => (
-        <div
-          key={index}
-          className={`grid grid-cols-4 px-3 py-2 text-sm ${
-            index % 2 === 0
-              ? "bg-gray-100"
-              : "bg-white"
-          }`}
-        >
-          <div className="text-gray-500">
-            {index + 1}
-          </div>
+      {customers.map(
+        (customer, index) => (
+          <div
+            key={index}
+            className={`grid grid-cols-4 px-3 py-2 text-sm ${
+              darkMode
+                ? index % 2 === 0
+                  ? "bg-[#1e293b]"
+                  : "bg-[#0f172a]"
+                : index % 2 === 0
+                ? "bg-gray-100"
+                : "bg-white"
+            }`}
+          >
+            <div className="text-gray-400">
+              {index + 1}
+            </div>
 
-          <div className="font-medium">
-            {customer.Name || "Unknown"}
-          </div>
+            <div className="font-medium">
+              {customer.Name ||
+                "Unknown"}
+            </div>
 
-          <div>
-            {customer.Phone || "No phone"}
-          </div>
+            <div>
+              {customer.Phone ||
+                "No phone"}
+            </div>
 
-          <div className={statusColor}>
-            {statusLabel ||
-              customer.query ||
-              customer.Query ||
-              "No query"}
+            <div
+              className={
+                statusColor
+              }
+            >
+              {statusLabel ||
+                customer.query ||
+                customer.Query ||
+                "No query"}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      )}
     </div>
   );
 }
 
+// ======================================================
+// APPOINTMENTS TABLE
+// ======================================================
 function AppointmentsTable({
   appointments,
   full,
+  darkMode,
 }) {
   return (
     <div
-      className={`bg-white rounded-xl shadow p-4 flex flex-col ${
-        full ? "h-full" : "h-[380px]"
+      className={`rounded-xl shadow-xl p-4 flex flex-col ${
+        full
+          ? "h-full"
+          : "h-[380px]"
+      } ${
+        darkMode
+          ? "bg-[#0f172a]"
+          : "bg-white"
       }`}
     >
       <h3 className="text-sm font-semibold mb-2">
         Appointment Bookings
       </h3>
 
-      <div className="grid grid-cols-6 text-xs font-bold bg-blue-200 px-2 py-2 rounded">
+      <div
+        className={`grid grid-cols-6 text-xs font-bold px-2 py-2 rounded ${
+          darkMode
+            ? "bg-[#1e293b]"
+            : "bg-blue-200"
+        }`}
+      >
         <div>#</div>
         <div>Name</div>
         <div>Phone</div>
@@ -790,29 +1151,53 @@ function AppointmentsTable({
           full ? "flex-1" : ""
         }`}
       >
-        {appointments.map((item, index) => (
-          <div
-            key={index}
-            className={`grid grid-cols-6 text-sm px-2 ${
-              index % 2 === 0
-                ? "bg-gray-200"
-                : "bg-white"
-            }`}
-            style={{
-              height: "40px",
-              alignItems: "center",
-            }}
-          >
-            <div>{index + 1}</div>
-            <div>{item.Name}</div>
-            <div>{item.Phone}</div>
-            <div>{item.Date}</div>
-            <div>{item.Time}</div>
-            <div>
-              {item.Appointment_status}
+        {appointments.map(
+          (item, index) => (
+            <div
+              key={index}
+              className={`grid grid-cols-6 text-sm px-2 ${
+                darkMode
+                  ? index % 2 === 0
+                    ? "bg-[#1e293b]"
+                    : "bg-[#0f172a]"
+                  : index % 2 === 0
+                  ? "bg-gray-200"
+                  : "bg-white"
+              }`}
+              style={{
+                height: "40px",
+                alignItems:
+                  "center",
+              }}
+            >
+              <div>
+                {index + 1}
+              </div>
+
+              <div>
+                {item.Name}
+              </div>
+
+              <div>
+                {item.Phone}
+              </div>
+
+              <div>
+                {item.Date}
+              </div>
+
+              <div>
+                {item.Time}
+              </div>
+
+              <div>
+                {
+                  item.Appointment_status
+                }
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   );

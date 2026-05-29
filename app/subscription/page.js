@@ -6,38 +6,38 @@ import { useRouter } from "next/navigation";
 export default function SubscriptionPage() {
   const router = useRouter();
 
-  // 📱 WhatsApp number (international format: no +, spaces, or dashes)
+  // 📱 WhatsApp number
   const WHATSAPP_NUMBER = "971544027954";
 
-  // 🔔 In-app notification state
+  // 🔔 Notification state
   const [notification, setNotification] = useState(null);
 
   // =====================================================
-  // CHECK SUBSCRIPTION STATUS AND SHOW REMINDERS
+  // CHECK SUBSCRIPTION STATUS
   // =====================================================
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-    // If user has no subscription yet, nothing to check
     if (!user.planExpiry) return;
 
     const now = new Date();
     const expiry = new Date(user.planExpiry);
 
-    // Calculate days remaining
     const diffMs = expiry.getTime() - now.getTime();
+
     const daysRemaining = Math.ceil(
       diffMs / (1000 * 60 * 60 * 24)
     );
 
-    // ==========================================
-    // SUBSCRIPTION EXPIRED
-    // ==========================================
+    // EXPIRED
     if (daysRemaining <= 0) {
       user.subscription = "expired";
-      localStorage.setItem("user", JSON.stringify(user));
 
-      // Remove login session
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
+
       localStorage.removeItem("token");
       localStorage.removeItem("isLoggedIn");
 
@@ -45,14 +45,12 @@ export default function SubscriptionPage() {
         "Your subscription has expired. Please renew to continue using SODAH."
       );
 
-      // Stay on subscription page
       router.replace("/subscription");
+
       return;
     }
 
-    // ==========================================
-    // IN-APP REMINDERS
-    // ==========================================
+    // REMINDERS
     if (daysRemaining === 3) {
       setNotification(
         "⚠️ Your subscription expires in 3 days. Renew now to avoid interruption."
@@ -71,20 +69,19 @@ export default function SubscriptionPage() {
   }, [router]);
 
   // =====================================================
-  // HANDLE PLAN SELECTION
+  // HANDLE PLAN
   // =====================================================
   const handleUpgrade = (plan) => {
     const now = new Date();
 
-    // ==========================================
-    // STARTER — 7 DAYS FREE TRIAL
-    // ==========================================
+    // STARTER
     if (plan === "Starter") {
       const user = JSON.parse(
         localStorage.getItem("user") || "{}"
       );
 
       const expiry = new Date();
+
       expiry.setDate(now.getDate() + 7);
 
       user.subscription = "active";
@@ -93,33 +90,33 @@ export default function SubscriptionPage() {
       user.planStartDate = now.toISOString();
       user.planExpiry = expiry.toISOString();
 
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
 
       router.push("/welcome");
+
       return;
     }
 
-    // ==========================================
-    // PRO PLAN
-    // ==========================================
+    // PRO
     if (plan === "Pro") {
       window.location.href =
         "https://www.paypal.com/ncp/payment/AH23RR8JBGTNN?plan=pro";
+
       return;
     }
 
-    // ==========================================
-    // PREMIUM PLAN
-    // ==========================================
+    // PREMIUM
     if (plan === "Premium") {
       window.location.href =
         "https://www.paypal.com/ncp/payment/H87TGY5F8Z6EA?plan=premium";
+
       return;
     }
 
-    // ==========================================
-    // CUSTOM AUTOMATION → WHATSAPP
-    // ==========================================
+    // CUSTOM
     if (plan === "Custom Automation") {
       const message =
         "Hi, I want to fully customize my business automation with SODAH. Please provide more details about your custom automation service.";
@@ -129,12 +126,13 @@ export default function SubscriptionPage() {
       )}`;
 
       window.open(whatsappUrl, "_blank");
+
       return;
     }
   };
 
   // =====================================================
-  // PLAN CARD COMPONENT
+  // PLAN CARD
   // =====================================================
   const PlanCard = ({
     title,
@@ -147,14 +145,30 @@ export default function SubscriptionPage() {
     subtitle,
   }) => (
     <div
-      className={`bg-white/5 ${borderClass} border rounded-xl p-4 md:p-5 backdrop-blur-sm flex flex-col justify-between min-h-[460px]`}
+      className={`
+        bg-white/5
+        ${borderClass}
+        border
+        rounded-2xl
+        px-5
+        pt-5
+        pb-4
+        backdrop-blur-sm
+        flex
+        flex-col
+        justify-between
+        h-full
+        transition
+        hover:scale-[1.01]
+      `}
     >
+      {/* TOP CONTENT */}
       <div>
-        <h3 className="text-lg md:text-xl font-semibold mb-2">
+        <h3 className="text-xl font-semibold mb-2">
           {title}
         </h3>
 
-        <p className="text-2xl md:text-3xl font-bold mb-3">
+        <p className="text-3xl font-bold mb-3">
           {price}
         </p>
 
@@ -164,16 +178,25 @@ export default function SubscriptionPage() {
           </p>
         )}
 
-        <ul className="text-xs md:text-sm text-gray-300 space-y-1.5">
+        <ul className="text-sm text-gray-300 space-y-2">
           {features.map((feature, index) => (
             <li key={index}>✔ {feature}</li>
           ))}
         </ul>
       </div>
 
+      {/* BUTTON */}
       <button
         onClick={onClick}
-        className={`mt-5 py-2.5 rounded-lg font-semibold transition ${buttonClass}`}
+        className={`
+          mt-6
+          py-3
+          rounded-xl
+          font-semibold
+          transition
+          w-full
+          ${buttonClass}
+        `}
       >
         {buttonText}
       </button>
@@ -181,26 +204,39 @@ export default function SubscriptionPage() {
   );
 
   return (
-    <div className="min-h-screen overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#064e3b] to-[#020617] text-white px-4 py-6 flex flex-col">
+    <div className="min-h-screen overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#064e3b] to-[#020617] text-white px-4 py-5 flex flex-col">
       {/* NOTIFICATION */}
       {notification && (
-        <div className="w-full max-w-5xl mx-auto mb-4 bg-yellow-500/20 border border-yellow-400 text-yellow-200 px-4 py-3 rounded-xl text-center text-sm">
+        <div className="w-full max-w-6xl mx-auto mb-4 bg-yellow-500/20 border border-yellow-400 text-yellow-200 px-4 py-3 rounded-xl text-center text-sm">
           {notification}
         </div>
       )}
 
       {/* HEADER */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl md:text-4xl font-bold mb-2">
+      <div className="text-center mb-5">
+        <h1 className="text-3xl md:text-5xl font-bold mb-2">
           Choose Your Plan 💰
         </h1>
+
         <p className="text-gray-300 text-sm md:text-base">
           Scale your business with powerful automation
         </p>
       </div>
 
       {/* PLANS */}
-      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 flex-1">
+      <div
+        className="
+          w-full
+          max-w-7xl
+          mx-auto
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          xl:grid-cols-4
+          gap-4
+          items-stretch
+        "
+      >
         {/* STARTER */}
         <PlanCard
           title="Starter"
@@ -264,7 +300,7 @@ export default function SubscriptionPage() {
           onClick={() => handleUpgrade("Premium")}
         />
 
-        {/* CUSTOM AUTOMATION */}
+        {/* CUSTOM */}
         <PlanCard
           title="Custom Automation 🤖"
           price=""
@@ -290,7 +326,7 @@ export default function SubscriptionPage() {
       </div>
 
       {/* BACK BUTTON */}
-      <div className="text-center mt-5">
+      <div className="text-center mt-4">
         <button
           onClick={() => router.push("/welcome")}
           className="text-gray-400 hover:text-white transition text-sm"

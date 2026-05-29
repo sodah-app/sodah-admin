@@ -1,5 +1,5 @@
 "use client";
-
+import ResponsiveContainer from "../../components/ui/ResponsiveContainer";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -204,6 +204,16 @@ const capabilityList = [
 export default function AutomationPage() {
   const router = useRouter();
 
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+    }
+  }, []);
+
   /* ---------------------------------------------------------------------- */
   /* STATE                                                                   */
   /* ---------------------------------------------------------------------- */
@@ -258,7 +268,20 @@ export default function AutomationPage() {
   /* ---------------------------------------------------------------------- */
   /* CLOSE DROPDOWNS WHEN CLICKING OUTSIDE                                   */
   /* ---------------------------------------------------------------------- */
-  useEffect(() => {
+ /* ---------------------------------------------------------------------- */
+/* LOAD DARK MODE                                                         */
+/* ---------------------------------------------------------------------- */
+useEffect(() => {
+
+  const savedTheme =
+    localStorage.getItem("theme");
+
+  if (savedTheme === "dark") {
+    setDarkMode(true);
+  }
+
+}, []);
+ useEffect(() => {
     const handleClickOutside = (e) => {
       if (daysRef.current && !daysRef.current.contains(e.target)) {
         setShowDaysDropdown(false);
@@ -540,7 +563,14 @@ export default function AutomationPage() {
   /* ---------------------------------------------------------------------- */
   /* PAGE JSX START                                                          */
   /* ---------------------------------------------------------------------- */
-  return (<main className="h-screen w-screen flex overflow-hidden bg-[#f5f7fa]">
+return (
+  <main
+    className={`h-screen w-screen flex overflow-hidden ${
+      darkMode
+        ? "dark bg-[#020617]"
+        : "bg-[#f5f7fa]"
+    }`}
+  >
       {/* SIDEBAR */}
      <aside className="w-[220px] bg-[#020617] text-white p-4 flex flex-col justify-between h-screen">
         <div>
@@ -593,7 +623,11 @@ export default function AutomationPage() {
 
       {/* CONTENT */}<section className="flex-1 flex items-center justify-center px-4 pt-17 pb-3 overflow-hidden">
         <div
-  className={`w-full max-w-[950px] bg-white rounded-3xl shadow-xl p-4 space-y-3 scale-[0.92] origin-top ${
+ className={`w-full rounded-3xl shadow-xl p-4 space-y-3 scale-[0.92] origin-top transition-all duration-300 ${
+    darkMode
+      ? "bg-[#111827] text-white"
+      : "bg-white text-black"
+  } ${
     shake ? "shake" : ""
   }`}
 >
@@ -611,10 +645,14 @@ export default function AutomationPage() {
                   })
                 }
                 className={`h-[46px] rounded-xl font-semibold border-2 transition text-sm ${
-                  form.setupType === "business"
-                    ? "bg-green-600 border-green-600 text-white"
-                    : "bg-white border-gray-300 text-gray-700"
-                }`}
+  form.setupType === "business"
+    ? "bg-green-600 border-green-600 text-white"
+    : darkMode
+    ? "bg-[#1f2937] border-[#374151] text-white"
+   : darkMode
+  ? "bg-[#111827] border-[#374151] text-white"
+  : "bg-white border-gray-300 text-gray-700"
+}`}
               >
                 🏢 Business Use
               </button>
@@ -627,11 +665,13 @@ export default function AutomationPage() {
                     setupType: "personal"
                   })
                 }
-                className={`h-[46px] rounded-xl font-semibold border-2 transition text-sm ${
-                  form.setupType === "personal"
-                    ? "bg-blue-600 border-blue-600 text-white"
-                    : "bg-white border-gray-300 text-gray-700"
-                }`}
+               className={`h-[46px] rounded-xl font-semibold border-2 transition text-sm ${
+  form.setupType === "personal"
+    ? "bg-blue-600 border-blue-600 text-white"
+    : darkMode
+    ? "bg-[#1f2937] border-[#374151] text-white"
+    : "bg-white border-gray-300 text-gray-700"
+}`}
               >
                 👤 Personal Use
               </button>
@@ -998,7 +1038,11 @@ export default function AutomationPage() {
           {/* SUBMIT BUTTON */}
           <button
             onClick={handleSubmit}
-            className="w-full h-[50px] rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-base shadow-md"
+            className={`w-full h-[50px] rounded-xl text-white font-semibold text-base shadow-md transition-all ${
+  darkMode
+    ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500"
+    : "bg-green-600 hover:bg-green-700"
+}`}
           >
             {loading ? "Checking..." : "🚀 Go Live"}
           </button>
@@ -1022,23 +1066,24 @@ export default function AutomationPage() {
 
       {/* STYLES */}
       <style jsx>{`
-        .input {
-          width: 100%;
-          height: 46px;
-          padding: 0 14px;
-          border: 2px solid #9ca3af;
-          border-radius: 12px;
-          background: white;
-          outline: none;
-          font-size: 14px;
-          transition: all 0.2s ease;
-        }
+       .input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 2px solid #9ca3af;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.95);
+  color: black;
+  outline: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
 
-        .input:focus {
-          border-color: #16a34a;
-          box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
-        }
-
+.dark .input {
+  background: #1f2937;
+  color: white;
+  border: 2px solid #374151;
+}
         .input-error {
           border: 2px solid #ef4444 !important;
           box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
@@ -1053,30 +1098,39 @@ export default function AutomationPage() {
         }
 
         .step.active {
-          background: linear-gradient(135deg, #16a34a, #22c55e);
-          color: white;
-          font-weight: 700;
-          box-shadow: 0 8px 20px rgba(34, 197, 94, 0.25);
-        }
+  background: linear-gradient(
+    135deg,
+    #16a34a,
+    #22c55e
+  );
 
-        .dropdownBox {
-          position: absolute;
-          left: 0;
-          bottom: calc(100% + 8px);
-          width: 100%;
-          background: white;
-          border: 2px solid #9ca3af;
-          border-radius: 12px;
-          padding: 10px;
-          max-height: 220px;
-          overflow-y: auto;
-          z-index: 999;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-        }
+  color: white;
+  font-weight: 700;
 
-        .shake {
-          animation: shake 0.35s;
-        }
+  box-shadow:
+    0 8px 20px rgba(34,197,94,0.25);
+}
+
+       .dropdownBox {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: 100%;
+  background: white;
+  border: 2px solid #9ca3af;
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.dark .dropdownBox {
+  background: #111827;
+  border: 2px solid #374151;
+  color: white;
+}
 
         @keyframes shake {
           0%, 100% {
@@ -1118,7 +1172,7 @@ function PhoneInput({
       <select
         value={valueCode}
         onChange={(e) => onCodeChange(e.target.value)}
-        className={`w-[150px] h-[46px] px-2 border-2 rounded-xl bg-white text-sm font-semibold outline-none ${
+        className={`w-[150px] h-[46px] px-2 border-2 rounded-xl bg-gray text-sm font-semibold outline-none ${
           invalid ? "border-red-500" : "border-gray-400"
         }`}
       >
@@ -1145,6 +1199,6 @@ function PhoneInput({
           onNumberChange(e.target.value.replace(/\D/g, ""))
         }
       />
-    </div>
+</div>
   );
 }
