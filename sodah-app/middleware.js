@@ -3,31 +3,24 @@ import { NextResponse } from "next/server";
 export function middleware(req) {
   const url = req.nextUrl;
 
-  /* =========================
-     PROTECTED ROUTES
-  ========================== */
+  // Existing dashboard protection
+  if (url.pathname.startsWith("/dashboard")) {
+    const blocked = req.cookies.get("blocked");
 
-  if (
-    url.pathname.startsWith(
-      "/dashboard"
-    )
-  ) {
-    const blocked =
-      req.cookies.get(
-        "blocked"
-      );
-
-    /* USER BLOCKED */
-
-    if (
-      blocked &&
-      blocked.value === "true"
-    ) {
+    if (blocked && blocked.value === "true") {
       return NextResponse.redirect(
-        new URL(
-          "/subscription-expired",
-          req.url
-        )
+        new URL("/subscription-expired", req.url)
+      );
+    }
+  }
+
+  // Admin protection
+  if (url.pathname.startsWith("/admin")) {
+    const adminToken = req.cookies.get("adminToken");
+
+    if (!adminToken) {
+      return NextResponse.redirect(
+        new URL("/admin-login", req.url)
       );
     }
   }
@@ -35,12 +28,9 @@ export function middleware(req) {
   return NextResponse.next();
 }
 
-/* =========================
-   MATCHER
-========================== */
-
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/admin/:path*",
   ],
 };
