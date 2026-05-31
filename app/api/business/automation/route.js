@@ -13,6 +13,14 @@ function generateBusinessId() {
 export async function POST(request) {
   try {
     const body = await request.json();
+console.log("REQUEST BODY:", body);
+
+console.log("PRICE:", body.priceRange);
+console.log("AI:", body.aiNumber);
+console.log("SUPPORT:", body.supportNumber);
+console.log("WORKING:", body.workingDays);
+console.log("FULL NAME:", body.fullName);
+console.log("BUSINESS:", body.businessName);
 
     console.log("REQUEST BODY:", body);
 
