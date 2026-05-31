@@ -141,7 +141,7 @@ export default function ConnectWhatsAppPage() {
 
           {/* Back Button */}
           <button
-            onClick={() => router.push("/setup")}
+            onClick={() => router.push("/automation")}
             className="px-5 py-2 text-gray-500 hover:text-gray-700 font-medium rounded-lg transition"
           >
             ← Back to automation
