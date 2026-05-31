@@ -14,30 +14,32 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const body = await req.json();
+console.log(
+  "ADMIN COUNT:",
+  await Admin.countDocuments()
+);
 
-    const { email, password } = body;
+console.log(
+  "ALL ADMINS:",
+  await Admin.find({})
+);
 
-    if (!email || !password) {
-      return Response.json(
-        { message: "Email and password required" },
-        { status: 400 }
-      );
-    }
+const admins = await Admin.find({});
 
-   const count = await Admin.countDocuments();
-
-console.log("ADMIN COUNT:", count);
+console.log("TOTAL ADMINS:", admins.length);
+console.log("ADMINS:", admins);
 
 const admin = await Admin.findOne({});
 
-console.log("FOUND ADMIN:", admin);
-    if (!admin) {
-      return Response.json(
-        { message: "Admin not found" },
-        { status: 404 }
-      );
-    }
+if (!admin) {
+  return Response.json(
+    {
+      message: "Admin not found",
+      adminCount: admins.length,
+    },
+    { status: 404 }
+  );
+}
 
     const isMatch = await bcrypt.compare(
       password,
