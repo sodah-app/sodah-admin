@@ -25,7 +25,11 @@ export async function POST(req) {
       );
     }
 
-   const admin = await Admin.findOne({});
+   const count = await Admin.countDocuments();
+
+console.log("ADMIN COUNT:", count);
+
+const admin = await Admin.findOne({});
 
 console.log("FOUND ADMIN:", admin);
     if (!admin) {
