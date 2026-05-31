@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
 import connectDB from "../../../../lib/mongodb.js";
 import Admin from "../../../../models/Admin.js";
@@ -24,8 +25,9 @@ export async function POST(req) {
       );
     }
 
-    const admin = await Admin.findOne({ email });
+   const admin = await Admin.findOne({});
 
+console.log("FOUND ADMIN:", admin);
     if (!admin) {
       return Response.json(
         { message: "Admin not found" },
@@ -39,7 +41,8 @@ export async function POST(req) {
     );
 
     if (!isMatch) {
-      return Response.json(
+      
+ NextResponse.json(
         { message: "Invalid password" },
         { status: 401 }
       );
@@ -56,14 +59,26 @@ export async function POST(req) {
       }
     );
 
-    return Response.json({
-      success: true,
-      token,
-      admin: {
-        email: admin.email,
-      },
-    });
+  const response = NextResponse.json({
+  success: true,
+  token,
+  admin: {
+    email: admin.email,
+  },
+});
 
+response.cookies.set(
+  "adminToken",
+  token,
+  {
+    httpOnly: true,
+    secure: false,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  }
+);
+
+return response;
   } catch (error) {
     console.log(error);
 

@@ -1,14 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboard() {
-  const [businesses, setBusinesses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  const [systemOnline, setSystemOnline] =
-    useState(false);
+  async function handleLogout() {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error(error);
+    }
+
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+
+    router.push("/admin-login");
+  }
+const [businesses, setBusinesses] = useState([]);
+const [loading, setLoading] = useState(true);
+
+const [systemOnline, setSystemOnline] = useState(false);
 
   const [stats, setStats] = useState({
     totalBusinesses: 0,

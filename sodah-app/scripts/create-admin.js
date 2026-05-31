@@ -22,13 +22,21 @@ async function createAdmin() {
           "admin@sodah.io",
       });
 
-    if (existingAdmin) {
-      console.log(
-        "Admin already exists."
-      );
+  if (existingAdmin) {
+  existingAdmin.password =
+    await bcrypt.hash(
+      "SodahAdmin123",
+      10
+    );
 
-      process.exit();
-    }
+  await existingAdmin.save();
+
+  console.log(
+    "Admin password reset."
+  );
+
+  process.exit();
+}
 
     /* HASH PASSWORD */
 
