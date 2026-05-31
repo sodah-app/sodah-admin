@@ -14,6 +14,8 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
+    console.log("REQUEST BODY:", body);
+
     // ==========================================================
     // 1. CHECK LIVE WHATSAPP SESSION BEFORE SAVING ANY DATA
     // ==========================================================
@@ -34,7 +36,6 @@ export async function POST(request) {
       if (checkResponse.ok) {
         const checkData = await checkResponse.json();
 
-        // Support different possible response formats
         const isConnected =
           checkData?.connected === true ||
           checkData?.isConnected === true ||
@@ -54,7 +55,6 @@ export async function POST(request) {
         }
       }
     } catch (sessionCheckError) {
-      // Do not block setup if the session check endpoint is unavailable.
       console.warn(
         "WhatsApp session check failed:",
         sessionCheckError.message
@@ -96,33 +96,36 @@ export async function POST(request) {
     }
 
     // ==========================================================
-    // 3. EXTRACT REQUEST DATA
+    // 3. EXTRACT REQUEST DATA (CAMELCASE FROM FRONTEND)
     // ==========================================================
     const {
       email,
-      business_name,
-      full_name,
+      businessName,
+      fullName,
       industry,
       location,
-      price_range,
-      ai_number,
-      support_number,
-      working_days,
+      priceRange,
+      aiNumber,
+      supportNumber,
+      workingDays,
       hours,
       capabilities,
-      personal_goal,
-      setup_type = "business",
+      personalGoal,
+      setupType = "business",
     } = body;
 
     // ==========================================================
     // 4. CHECK IF THIS BUSINESS HAS ALREADY BEEN SAVED
     // ==========================================================
+    const businessNameToCheck =
+      businessName || fullName || "Unknown";
+
     const { data: existingBusiness, error: existingBusinessError } =
       await supabase
         .from("businesses")
         .select("*")
         .eq("email", email)
-        .eq("business_name", business_name)
+        .eq("business_name", businessNameToCheck)
         .maybeSingle();
 
     if (existingBusinessError) {
@@ -159,20 +162,36 @@ export async function POST(request) {
       .insert([
         {
           business_id,
-          setup_type,
-          business_name,
-          full_name,
+
+          setup_type: setupType,
+
+          business_name:
+            setupType === "business"
+              ? businessName
+              : fullName,
+
+          full_name: fullName,
+
           industry,
           email,
           location,
-          price_range,
-          ai_number,
-          support_number,
-          working_days,
+
+          price_range: priceRange,
+
+          ai_number: aiNumber,
+
+          support_number: supportNumber,
+
+          working_days: workingDays,
+
           hours,
+
           capabilities,
-          personal_goal,
+
+          personal_goal: personalGoal,
+
           whatsapp_connected: false,
+
           status: "active",
         },
       ])
@@ -185,7 +204,6 @@ export async function POST(request) {
     if (error) {
       console.error("Supabase error:", error);
 
-      // Unique constraint on support_number
       if (
         error.code === "23505" ||
         error.message?.toLowerCase().includes("duplicate")
