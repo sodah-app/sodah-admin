@@ -52,6 +52,8 @@ export default function BusinessProfile() {
       }
 
       setBusiness(data);
+console.log("Business Data:", data);
+console.log("Columns:", Object.keys(data));
     } catch (err) {
       console.error(
         "Unexpected Error:",
@@ -353,15 +355,14 @@ export default function BusinessProfile() {
               gap: "20px",
             }}
           >
-            <InfoCard
-              title="AI Enabled"
-              value={
-                business.ai_enabled
-                  ? "Enabled"
-                  : "Disabled"
-              }
-            />
-
+           <InfoCard
+  title="AI Enabled"
+  value={
+    business.ai_enabled
+      ? "Enabled"
+      : "Disabled"
+  }
+/>
             <InfoCard
               title="Automation Status"
               value={
