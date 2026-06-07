@@ -10,7 +10,7 @@ export default function HomePage() {
     "https://images.unsplash.com/photo-1451187580459-43490279c0fa",
     "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
       "https://res.cloudinary.com/djnjhphf5/image/upload/v1779814901/sodah.io_logo_z6xflv.png",
-      "https://res.cloudinary.com/djnjhphf5/image/upload/v1779814901/sodah.io_logo_z6xflv.png",
+      "https://res.cloudinary.com/djnjhphf5/image/upload/v1780841770/WhatsApp_Image_2026-03-23_at_11.29.30_AM_czqxht.jpg",
     "https://images.unsplash.com/photo-1484417894907-623942c8ee29",
     "https://images.unsplash.com/photo-1460925895917-afdab827c52f",
     "https://images.unsplash.com/photo-1552664730-d307ca884978",
