@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-
 export function middleware(req) {
   const url = req.nextUrl;
-
   // Existing dashboard protection
   if (url.pathname.startsWith("/dashboard")) {
     const blocked = req.cookies.get("blocked");
@@ -13,7 +11,6 @@ export function middleware(req) {
       );
     }
   }
-
   // Admin protection
   if (url.pathname.startsWith("/admin")) {
     const adminToken = req.cookies.get("adminToken");
@@ -30,7 +27,8 @@ export function middleware(req) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
+    "/admin",
     "/admin/:path*",
+    "/dashboard/:path*",
   ],
 };

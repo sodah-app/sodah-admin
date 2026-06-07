@@ -7,24 +7,14 @@ import { supabase } from "@/lib/supabase";
 export default function AdminDashboard() {
   const router = useRouter();
 
-  async function handleLogout() {
-    try {
-      await fetch("/api/admin/logout", {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error(error);
-    }
+  const [businesses, setBusinesses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
+  const [systemOnline, setSystemOnline] =
+    useState(false);
 
-    router.push("/admin-login");
-  }
-const [businesses, setBusinesses] = useState([]);
-const [loading, setLoading] = useState(true);
-
-const [systemOnline, setSystemOnline] = useState(false);
+  const [settings, setSettings] =
+    useState(null);
 
   const [stats, setStats] = useState({
     totalBusinesses: 0,
@@ -33,17 +23,39 @@ const [systemOnline, setSystemOnline] = useState(false);
     monthlyRevenue: 0,
   });
 
-  const [settings, setSettings] =
-    useState(null);
+  async function handleLogout() {
+    try {
+      await fetch(
+        "/api/admin/logout",
+        {
+          method: "POST",
+        }
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    localStorage.removeItem(
+      "adminToken"
+    );
+
+    localStorage.removeItem(
+      "adminUser"
+    );
+
+    router.push(
+      "/admin-login"
+    );
+  }
 
   useEffect(() => {
     fetchDashboard();
 
-    /* REALTIME BUSINESS */
-
     const businessesChannel =
       supabase
-        .channel("dashboard-businesses")
+        .channel(
+          "dashboard-businesses"
+        )
         .on(
           "postgres_changes",
           {
@@ -57,11 +69,11 @@ const [systemOnline, setSystemOnline] = useState(false);
         )
         .subscribe();
 
-    /* REALTIME SETTINGS */
-
     const settingsChannel =
       supabase
-        .channel("dashboard-settings")
+        .channel(
+          "dashboard-settings"
+        )
         .on(
           "postgres_changes",
           {
@@ -86,137 +98,130 @@ const [systemOnline, setSystemOnline] = useState(false);
     };
   }, []);
 
- async function fetchDashboard() {
-  try {
-    setLoading(true);
+  async function fetchDashboard() {
+    try {
+      setLoading(true);
 
-    /* FETCH ALL DATA IN PARALLEL */
-
-    const [
-      businessesRes,
-      paymentsRes,
-      aiLogsRes,
-      settingsRes,
-    ] = await Promise.all([
-      supabase
-        .from("businesses")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        }),
-
-      supabase
-        .from("payments")
-        .select("*"),
-
-      supabase
-        .from("ai_logs")
-        .select("*"),
-
-      supabase
-        .from("settings")
-        .select("*")
-        .limit(1),
-    ]);
-
-    const businessesData =
-      businessesRes.data || [];
-
-    const paymentsData =
-      paymentsRes.data || [];
-
-    const aiLogsData =
-      aiLogsRes.data || [];
-
-    const settingsData =
-      settingsRes.data?.[0] || null;
-
-    setBusinesses(
-      businessesData
-    );
-
-    /* STATS */
-
-    const totalBusinesses =
-      businessesData.length;
-
-    const activeBots =
-      businessesData.filter(
-        (item) =>
-          item.ai_active === true ||
-          !!item.ai_number
-      ).length;
-
-    const messagesToday =
-      aiLogsData.reduce(
-        (sum, item) =>
-          sum +
-          Number(
-            item.messages_today || 0
+      const [
+        businessesRes,
+        paymentsRes,
+        settingsRes,
+      ] = await Promise.all([
+        supabase
+          .from("businesses")
+          .select("*")
+          .order(
+            "created_at",
+            {
+              ascending: false,
+            }
           ),
-        0
+
+        supabase
+          .from("payments")
+          .select("*"),
+
+        supabase
+          .from("settings")
+          .select("*")
+          .limit(1),
+      ]);
+
+      const businessesData =
+        businessesRes.data || [];
+
+      const paymentsData =
+        paymentsRes.data || [];
+
+      const settingsData =
+        settingsRes.data?.[0] ||
+        null;
+
+      setBusinesses(
+        businessesData
       );
 
-    const monthlyRevenue =
-      paymentsData.reduce(
-        (sum, item) =>
-          sum +
-          Number(
-            item.amount || 0
-          ),
-        0
+      setSettings(
+        settingsData
       );
 
-    setStats({
-      totalBusinesses,
-      activeBots,
-      messagesToday,
-      monthlyRevenue,
-    });
+      const totalBusinesses =
+        businessesData.length;
 
-    /* SYSTEM STATUS */
+      const activeBots =
+        businessesData.filter(
+          (business) =>
+            business.status ===
+            "active"
+        ).length;
 
-    console.log(
-      "SETTINGS:",
-      settingsData
-    );
+      const messagesToday =
+        businessesData.reduce(
+          (
+            total,
+            business
+          ) =>
+            total +
+            Number(
+              business.messages_today ||
+                0
+            ),
+          0
+        );
 
-    if (!settingsData) {
-      setSystemOnline(false);
-      return;
+      const monthlyRevenue =
+        paymentsData.reduce(
+          (
+            total,
+            payment
+          ) =>
+            total +
+            Number(
+              payment.amount ||
+                0
+            ),
+          0
+        );
+
+      setStats({
+        totalBusinesses,
+        activeBots,
+        messagesToday,
+        monthlyRevenue,
+      });
+
+      if (!settingsData) {
+        setSystemOnline(
+          false
+        );
+
+        return;
+      }
+
+      const online =
+        settingsData.ai_automation ===
+          true &&
+        settingsData.auto_reply ===
+          true &&
+        settingsData.maintenance_mode !==
+          true;
+
+      setSystemOnline(
+        online
+      );
+    } catch (error) {
+      console.error(
+        "Dashboard Error:",
+        error
+      );
+
+      setSystemOnline(
+        false
+      );
+    } finally {
+      setLoading(false);
     }
-
-    const aiAutomation =
-      settingsData.ai_automation === true;
-
-    const autoReply =
-      settingsData.auto_reply === true;
-
-    const maintenanceMode =
-      settingsData.maintenance_mode === true;
-
-    const online =
-      aiAutomation &&
-      autoReply &&
-      !maintenanceMode;
-
-    setSystemOnline(online);
-
-    console.log(
-      "SYSTEM ONLINE:",
-      online
-    );
-  } catch (error) {
-    console.error(
-      "Dashboard Error:",
-      error
-    );
-
-    setSystemOnline(false);
-  } finally {
-    setLoading(false);
   }
-}
 
   return (
     <div
@@ -286,7 +291,7 @@ const [systemOnline, setSystemOnline] = useState(false);
                 color: "#94a3b8",
               }}
             >
-              Real-time AI Platform
+              Real-time AI Platform Monitoring
             </p>
           </div>
 
@@ -344,7 +349,7 @@ const [systemOnline, setSystemOnline] = useState(false);
 
             {systemOnline
               ? "SYSTEM ACTIVE"
-              : "SYSTEM MAINTENANCE"}
+              : "SYSTEM OFFLINE"}
           </div>
         </div>
 
@@ -368,7 +373,7 @@ const [systemOnline, setSystemOnline] = useState(false);
           />
 
           <StatCard
-            title="AI Bots"
+            title="Active Bots"
             value={
               stats.activeBots
             }
@@ -390,7 +395,7 @@ const [systemOnline, setSystemOnline] = useState(false);
           />
         </div>
 
-        {/* SETTINGS STATUS */}
+        {/* SETTINGS PANEL */}
 
         {settings && (
           <div
@@ -432,7 +437,7 @@ const [systemOnline, setSystemOnline] = useState(false);
               Maintenance:
               {" "}
               {settings.maintenance_mode
-                ? "❌ ACTIVE"
+                ? "⚠️ ACTIVE"
                 : "✅ OFF"}
             </p>
 
@@ -469,7 +474,7 @@ const [systemOnline, setSystemOnline] = useState(false);
               "column",
           }}
         >
-          {/* HEADER */}
+          {/* TABLE HEADER */}
 
           <div
             style={{
@@ -484,12 +489,15 @@ const [systemOnline, setSystemOnline] = useState(false);
             }}
           >
             <div>Business</div>
+
             <div>Industry</div>
+
             <div>Status</div>
+
             <div>Created</div>
           </div>
 
-          {/* BODY */}
+          {/* TABLE BODY */}
 
           <div
             style={{
@@ -501,7 +509,8 @@ const [systemOnline, setSystemOnline] = useState(false);
               <div
                 style={{
                   padding: "40px",
-                  textAlign: "center",
+                  textAlign:
+                    "center",
                 }}
               >
                 Loading dashboard...
@@ -511,7 +520,8 @@ const [systemOnline, setSystemOnline] = useState(false);
               <div
                 style={{
                   padding: "40px",
-                  textAlign: "center",
+                  textAlign:
+                    "center",
                 }}
               >
                 No businesses found
@@ -520,9 +530,12 @@ const [systemOnline, setSystemOnline] = useState(false);
               businesses.map(
                 (business) => (
                   <BusinessRow
-                    key={business.id}
+                    key={
+                      business.id
+                    }
                     name={
                       business.business_name ||
+                      business.full_name ||
                       "Unnamed"
                     }
                     industry={
@@ -530,9 +543,8 @@ const [systemOnline, setSystemOnline] = useState(false);
                       "Unknown"
                     }
                     status={
-                      business.ai_active
-                        ? "Active"
-                        : "Offline"
+                      business.status ||
+                      "offline"
                     }
                     created={
                       business.created_at
@@ -547,6 +559,7 @@ const [systemOnline, setSystemOnline] = useState(false);
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -565,11 +578,14 @@ function StatCard({
     <div
       style={{
         background: bg,
-        borderRadius: "24px",
+        borderRadius:
+          "24px",
         padding: "24px",
-        minHeight: "140px",
+        minHeight:
+          "140px",
         display: "flex",
-        flexDirection: "column",
+        flexDirection:
+          "column",
         justifyContent:
           "space-between",
       }}
@@ -577,8 +593,10 @@ function StatCard({
       <div>
         <p
           style={{
-            marginBottom: "12px",
-            fontWeight: "bold",
+            marginBottom:
+              "12px",
+            fontWeight:
+              "bold",
           }}
         >
           {title}
@@ -587,7 +605,8 @@ function StatCard({
         <h2
           style={{
             fontSize: "48px",
-            fontWeight: "900",
+            fontWeight:
+              "900",
           }}
         >
           {value}
@@ -607,6 +626,9 @@ function BusinessRow({
   status,
   created,
 }) {
+  const isActive =
+    status === "active";
+
   return (
     <div
       style={{
@@ -619,34 +641,46 @@ function BusinessRow({
         alignItems: "center",
       }}
     >
-      <div>{name}</div>
+      <div>
+        {name}
+      </div>
 
-      <div>{industry}</div>
+      <div>
+        {industry}
+      </div>
 
       <div>
         <span
           style={{
             padding:
               "6px 14px",
+
             borderRadius:
               "999px",
+
             background:
-              status ===
-              "Active"
+              isActive
                 ? "rgba(34,197,94,0.15)"
                 : "rgba(239,68,68,0.15)",
+
             color:
-              status ===
-              "Active"
+              isActive
                 ? "#4ade80"
                 : "#f87171",
+
+            fontWeight:
+              "bold",
           }}
         >
-          {status}
+          {isActive
+            ? "Active"
+            : "Offline"}
         </span>
       </div>
 
-      <div>{created}</div>
+      <div>
+        {created}
+      </div>
     </div>
   );
 }

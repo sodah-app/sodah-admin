@@ -22,6 +22,8 @@ export default function BusinessesPage() {
 
     if (!error) {
       setBusinesses(data || []);
+    } else {
+      console.error(error);
     }
 
     setLoading(false);
@@ -34,6 +36,7 @@ export default function BusinessesPage() {
       }}
     >
       {/* HEADER */}
+
       <div
         style={{
           marginBottom: "30px",
@@ -59,6 +62,7 @@ export default function BusinessesPage() {
       </div>
 
       {/* TABLE */}
+
       <div
         style={{
           background: "#111827",
@@ -67,7 +71,8 @@ export default function BusinessesPage() {
           border: "1px solid #1f2937",
         }}
       >
-        {/* HEADER */}
+        {/* TABLE HEADER */}
+
         <div
           style={{
             display: "grid",
@@ -86,7 +91,8 @@ export default function BusinessesPage() {
           <div>Profile</div>
         </div>
 
-        {/* BODY */}
+        {/* TABLE BODY */}
+
         <div
           style={{
             maxHeight: "650px",
@@ -123,35 +129,54 @@ export default function BusinessesPage() {
                   alignItems: "center",
                 }}
               >
+                {/* BUSINESS */}
+
                 <div>
                   {business.business_name ||
                     business.full_name ||
                     "Unnamed"}
                 </div>
 
+                {/* INDUSTRY */}
+
                 <div>
                   {business.industry ||
                     "Unknown"}
                 </div>
+
+                {/* PHONE */}
 
                 <div>
                   {business.ai_number ||
                     "No Number"}
                 </div>
 
+                {/* STATUS */}
+
                 <div>
                   <span
                     style={{
-                      background: "#052e16",
-                      color: "#4ade80",
+                      background:
+                        business.status === "active"
+                          ? "#052e16"
+                          : "#3f1d1d",
+
+                      color:
+                        business.status === "active"
+                          ? "#4ade80"
+                          : "#f87171",
+
                       padding: "6px 12px",
                       borderRadius: "999px",
                       fontSize: "14px",
                     }}
                   >
-                    Active
+                    {business.status ||
+                      "offline"}
                   </span>
                 </div>
+
+                {/* PROFILE */}
 
                 <Link
                   href={`/admin/businesses/${business.id}`}
